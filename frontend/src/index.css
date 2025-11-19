@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+ --color-primarybg: #FFFFFF;
+ --color-primary: #2563EB;
+ --color-secondary: #334155;
+ --color-highlight: #E2B714;
+ --color-success: #22C55E;
+ --color-danger: #EF4444;
+ --color-warning: #F59E0B;
+ --color-info: #0EA5E9;
+ --color-container: #F9F9F9;
+ --color-card-shadow: rgba(0, 0, 0, 0.06);
+ --color-bordered: #E5E5E5;
+ --font-urbanist: 'Urbanist', sans-serif;
+ --font-inter: 'Inter', sans-serif;
+--breakpoint-xs: 360px;
+}
