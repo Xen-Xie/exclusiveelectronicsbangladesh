@@ -13,12 +13,13 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       match: [
         /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/,
         "Password must be at least 8 characters and include an uppercase letter, number, and special character",
       ],
     },
+    googleId: { type: String, default: null },
     phoneNumber: { type: String },
     address: { type: String, default: "" },
     role: { type: String, enum: ["user", "admin"], default: "user" },

@@ -8,8 +8,17 @@ const app = express();
 dotenv.config();
 
 app.use(express.json());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://exclusiveelectronicbangladesh.netlify.app",
+    ],
+    credentials: true,
+  })
+);
 
-const url = process.env.MONGO_URl;
+const url = process.env.MONGO_URL;
 DB(url);
 app.use("/api/user", userRoutes);
 
