@@ -27,12 +27,13 @@ function GoogleButton() {
     }
   };
 
-  const initialize = () => {
+  useEffect(() => {
     if (!window.google || !clientId) return;
 
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: handleGoogleResponse,
+      ux_mode: "popup",
     });
 
     window.google.accounts.id.renderButton(
@@ -43,15 +44,7 @@ function GoogleButton() {
         shape: "pill",
       }
     );
-  };
-
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = initialize;
-    document.body.appendChild(script);
-  }, []);
+  }, [clientId]);
 
   return (
     <div className="mt-4 flex flex-col items-center">
