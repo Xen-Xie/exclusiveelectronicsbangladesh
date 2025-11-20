@@ -7,35 +7,64 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Continue with Google
 export const googleAuth = async (req, res) => {
   try {
+    console.log("Google auth endpoint hit");
     const { idToken } = req.body;
 
-    if (!idToken)
+    if (!idToken) {
+      console.log("No ID token provided");
       return res.status(400).json({
         status: "fail",
         message: "Missing Google ID token",
       });
+    }
 
     // Verify Google token
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    let payload;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+      console.log("Google token verified for:", payload.email);
+    } catch (googleError) {
+      console.error("Google token verification failed:", googleError);
+      return res.status(400).json({
+        status: "fail",
+        message: "Invalid Google token",
+      });
+    }
 
-    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
 
-    const { email, name, sub } = payload;
+    if (!email) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Email not found in Google token",
+      });
+    }
 
     // Check if user already exists
-    let user = await User.findOne({ email });
+    let user = await User.findOne({
+      $or: [{ email }, { googleId }],
+    });
+
+    console.log("User lookup result:", user ? "found" : "not found");
 
     if (!user) {
       // Create new Google user
       user = await User.create({
         name,
         email,
-        googleId: sub,
+        googleId,
         password: null,
       });
+      console.log("New Google user created:", email);
+    } else if (!user.googleId) {
+      // Update existing user with Google ID
+      user.googleId = googleId;
+      await user.save();
+      console.log("Existing user updated with Google ID:", email);
     }
 
     // Generate JWT
@@ -56,6 +85,11 @@ export const googleAuth = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ status: "fail", message: error.message });
+    console.error("Google auth error:", error);
+    res.status(500).json({
+      status: "fail",
+      message: "Authentication failed",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };

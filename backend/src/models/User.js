@@ -13,19 +13,21 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: false,
-      match: [
-        /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/,
-        "Password must be at least 8 characters and include an uppercase letter, number, and special character",
-      ],
+      required: function () {
+        return !this.googleId;
+      },
+      match: [/^.{6,}$/, "Password must be at least 6 characters"],
     },
-    googleId: { type: String, default: null },
+    googleId: { type: String, default: null, unique: true },
     phoneNumber: { type: String },
     address: { type: String, default: "" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
-    isAdmin: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
+// Add indexes for better performance
+userSchema.index({ email: 1 });
+userSchema.index({ googleId: 1 });
 
 export default mongoose.model("User", userSchema);
