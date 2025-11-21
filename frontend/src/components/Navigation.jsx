@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuthContext } from "../auth/AuthContext";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -11,8 +12,9 @@ const navItems = [
 ];
 
 function Navigation() {
-  const [oepnMenu, setOpenMenu] = useState(false);
-  const [cartCount, setCartCount] = useState(2); // demo value (change when hooking backend)
+  const { user } = useContext(AuthContext);
+  const [openMenu, setOpenMenu] = useState(false);
+  const [cartCount, setCartCount] = useState(2); // demo value
 
   return (
     <nav className="w-full border-b border-bordered bg-primarybg px-4 sm:px-6 py-3 font-inter">
@@ -21,7 +23,7 @@ function Navigation() {
         <Link to="/">
           <img
             src="/exlogo.jpg"
-            alt=""
+            alt="Logo"
             className="w-13 md:w-18 lg:w-22 rounded-full"
           />
         </Link>
@@ -40,13 +42,12 @@ function Navigation() {
           </ul>
         </div>
 
-        {/* Desktop Cart & Button */}
+        {/* Desktop Cart & Button / Profile */}
         <div className="hidden md:flex gap-4 items-center relative">
+          {/* Cart */}
           <div className="relative">
             <Link to="/checkout">
               <i className="fa-solid fa-cart-arrow-down text-2xl hover:text-secondary/85 transition-all duration-300"></i>
-
-              {/* Cart Badge */}
               <AnimatePresence>
                 {cartCount > 0 && (
                   <motion.span
@@ -64,9 +65,16 @@ function Navigation() {
             </Link>
           </div>
 
-          <Link to="/sign-up" className="text-lg lg:text-xl">
-            Sign Up
-          </Link>
+          {/* Sign Up or Profile */}
+          {!user ? (
+            <Link to="/sign-up" className="text-lg lg:text-xl">
+              Sign Up
+            </Link>
+          ) : (
+            <Link to="/profile">
+              <i className="fa-solid fa-user-circle text-3xl hover:text-secondary/85 transition-all duration-300 mb-2"></i>
+            </Link>
+          )}
         </div>
 
         {/* Mobile Cart & Hamburger */}
@@ -74,8 +82,6 @@ function Navigation() {
           {/* Mobile Cart */}
           <div className="relative">
             <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
-
-            {/* Cart Badge */}
             <AnimatePresence>
               {cartCount > 0 && (
                 <motion.span
@@ -101,7 +107,7 @@ function Navigation() {
 
       {/* Mobile Menu */}
       <AnimatePresence>
-        {oepnMenu && (
+        {openMenu && (
           <>
             {/* Overlay */}
             <motion.div
@@ -141,10 +147,18 @@ function Navigation() {
                   </li>
                 ))}
 
+                {/* Mobile Sign Up or Profile */}
                 <li className="pt-2">
-                  <Link to="/sign-up" onClick={() => setOpenMenu(false)}>
-                    Sign Up
-                  </Link>
+                  {!user ? (
+                    <Link to="/sign-up" onClick={() => setOpenMenu(false)}>
+                      Sign Up
+                    </Link>
+                  ) : (
+                    <Link to="/profile" onClick={() => setOpenMenu(false)}>
+                      <i className="fa-solid fa-user-circle text-2xl"></i>{" "}
+                      Account
+                    </Link>
+                  )}
                 </li>
               </ul>
             </motion.div>
