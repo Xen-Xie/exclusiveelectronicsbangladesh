@@ -35,7 +35,7 @@ const handleGoogleResponse = useCallback(async (response) => {
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: handleGoogleResponse,
-      ux_mode: "popup",
+      ux_mode: /Mobi|Android/i.test(navigator.userAgent) ? "redirect" : "popup",
     });
 
     window.google.accounts.id.renderButton(
