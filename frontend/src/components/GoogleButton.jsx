@@ -14,7 +14,6 @@ function GoogleButton() {
   const handleGoogleResponse = useCallback(
     async (response) => {
       try {
-        // For popup flow (desktop), credential comes here
         const idToken = response?.credential || null;
 
         if (!idToken) {
@@ -29,7 +28,7 @@ function GoogleButton() {
         );
 
         login(res.data.token, () => {
-          navigate("/");
+          navigate("/"); // redirect after login
         });
       } catch (err) {
         console.error("Google login failed:", err);
@@ -42,16 +41,13 @@ function GoogleButton() {
   useEffect(() => {
     if (!window.google || !clientId) return;
 
-    // Detect mobile device
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: handleGoogleResponse,
       ux_mode: isMobile ? "redirect" : "popup", // redirect on mobile, popup on desktop
-      redirect_uri: isMobile
-        ? `${window.location.origin}/google-callback`
-        : undefined, // must match your Google Cloud redirect URI
+      redirect_uri: `${window.location.origin}/google-callback`, // always explicit
     });
 
     window.google.accounts.id.renderButton(
@@ -64,8 +60,7 @@ function GoogleButton() {
     );
 
     if (!isMobile) {
-      // optional: auto prompt on desktop
-      window.google.accounts.id.prompt();
+      window.google.accounts.id.prompt(); // optional auto prompt for desktop
     }
   }, [clientId, handleGoogleResponse]);
 
