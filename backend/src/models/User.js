@@ -18,16 +18,12 @@ const userSchema = new Schema(
       },
       match: [/^.{6,}$/, "Password must be at least 6 characters"],
     },
-    googleId: { type: String, default: null, unique: true },
+    googleId: { type: String, default: null },
     phoneNumber: { type: String },
     address: { type: String, default: "" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
   },
   { timestamps: true }
 );
-
-// Add indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ googleId: 1 });
 
 export default mongoose.model("User", userSchema);
