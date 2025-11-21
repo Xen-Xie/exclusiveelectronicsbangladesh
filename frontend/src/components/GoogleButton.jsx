@@ -43,14 +43,13 @@ function GoogleButton() {
 
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleGoogleResponse,
-      ux_mode: isMobile ? "redirect" : "popup",
-      redirect_uri: isMobile
-        ? "https://exclusiveelectronicbangladesh.netlify.app/google-callback"
-        : undefined,
-    });
+  window.google.accounts.id.initialize({
+  client_id: clientId,
+  callback: handleGoogleResponse,
+  ux_mode: isMobile ? "redirect" : "popup",
+  redirect_uri: "https://exclusiveelectronicbangladesh.netlify.app/google-callback", // explicit, must match Google Console
+});
+
 
     window.google.accounts.id.renderButton(
       document.getElementById("googleBtn"),
