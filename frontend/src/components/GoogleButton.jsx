@@ -11,31 +11,47 @@ function GoogleButton() {
 
   const [message, setMessage] = useState("");
 
-const handleGoogleResponse = useCallback(async (response) => {
-  try {
-    const res = await axios.post(
-      `${apiUrl}/api/user/google`,
-      { idToken: response.credential },
-      { withCredentials: true }
-    );
+  const handleGoogleResponse = useCallback(
+    async (response) => {
+      try {
+        // For popup flow (desktop), credential comes here
+        const idToken = response?.credential || null;
 
-    login(res.data.token, () => {
-      navigate("/");
-    });
-  } catch (err) {
-    console.error("Google login failed:", err);
-    setMessage("Google login failed");
-  }
-}, [apiUrl, login, navigate]);
+        if (!idToken) {
+          setMessage("No Google credential received");
+          return;
+        }
 
+        const res = await axios.post(
+          `${apiUrl}/api/user/google`,
+          { idToken },
+          { withCredentials: true }
+        );
+
+        login(res.data.token, () => {
+          navigate("/");
+        });
+      } catch (err) {
+        console.error("Google login failed:", err);
+        setMessage("Google login failed");
+      }
+    },
+    [apiUrl, login, navigate]
+  );
 
   useEffect(() => {
     if (!window.google || !clientId) return;
 
+    // Detect mobile device
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: handleGoogleResponse,
-      ux_mode: /Mobi|Android/i.test(navigator.userAgent) ? "redirect" : "popup",
+      ux_mode: isMobile ? "redirect" : "popup", // redirect on mobile, popup on desktop
+      redirect_uri: isMobile
+        ? `${window.location.origin}/google-callback`
+        : undefined, // must match your Google Cloud redirect URI
     });
 
     window.google.accounts.id.renderButton(
@@ -46,6 +62,11 @@ const handleGoogleResponse = useCallback(async (response) => {
         shape: "pill",
       }
     );
+
+    if (!isMobile) {
+      // optional: auto prompt on desktop
+      window.google.accounts.id.prompt();
+    }
   }, [clientId, handleGoogleResponse]);
 
   return (
