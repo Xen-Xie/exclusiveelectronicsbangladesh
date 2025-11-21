@@ -46,22 +46,18 @@ function GoogleButton() {
     window.google.accounts.id.initialize({
       client_id: clientId,
       callback: handleGoogleResponse,
-      ux_mode: isMobile ? "redirect" : "popup", // redirect on mobile, popup on desktop
-      redirect_uri: `${window.location.origin}/google-callback`, // always explicit
+      ux_mode: isMobile ? "redirect" : "popup",
+      redirect_uri: isMobile
+        ? "https://exclusiveelectronicbangladesh.netlify.app/google-callback"
+        : undefined,
     });
 
     window.google.accounts.id.renderButton(
       document.getElementById("googleBtn"),
-      {
-        theme: "outline",
-        size: "large",
-        shape: "pill",
-      }
+      { theme: "outline", size: "large", shape: "pill" }
     );
 
-    if (!isMobile) {
-      window.google.accounts.id.prompt(); // optional auto prompt for desktop
-    }
+    if (!isMobile) window.google.accounts.id.prompt();
   }, [clientId, handleGoogleResponse]);
 
   return (

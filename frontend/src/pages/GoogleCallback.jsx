@@ -1,4 +1,3 @@
-// src/pages/GoogleCallback.jsx
 import { useEffect, useContext } from "react";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../auth/AuthContext";
@@ -20,9 +19,7 @@ function GoogleCallback() {
 
     (async () => {
       try {
-        const res = await axios.post(`${apiUrl}/api/user/google`, {
-          idToken,
-        });
+        const res = await axios.post(`${apiUrl}/api/user/google`, { idToken });
 
         login(res.data.token, () => {
           navigate("/"); // redirect to home after login
