@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext } from "./AuthContext";
@@ -8,11 +7,12 @@ export function AuthProvider({ children }) {
   // Local state to store the current user and token
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [loading, setLoading] = useState(true);
 
   // Ref to store logout timer so we can clear it if needed
   const logoutTimerRef = useRef(null);
 
-  // Logout Logic
+  // Clear auth (logout)
   const clearAuth = useCallback(() => {
     localStorage.removeItem("token");
     setUser(null);
@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
       const timeUntilExpiry = exp * 1000 - Date.now();
       if (timeUntilExpiry > 0) {
         logoutTimerRef.current = setTimeout(() => {
-          clearAuth(); // logout when token expires
+          clearAuth();
         }, timeUntilExpiry);
       } else {
         clearAuth();
@@ -39,26 +39,26 @@ export function AuthProvider({ children }) {
     [clearAuth]
   );
 
-  // check saved token
+  // Decode token on mount or token change
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      const decoded = jwtDecode(token); // decode JWT to get user info & expiry
-
-      // Function to safely update state
-      const handleAuthUpdate = () => {
-        if (decoded.exp * 1000 < Date.now()) {
-          clearAuth();
-        } else {
-          setUser(decoded);
-          scheduleLogout(decoded.exp);
-        }
-      };
-
-      queueMicrotask(handleAuthUpdate);
+      const decoded = jwtDecode(token);
+      if (decoded.exp * 1000 < Date.now()) {
+        clearAuth();
+      } else {
+        setUser(decoded);
+        scheduleLogout(decoded.exp);
+      }
     } catch (error) {
-      queueMicrotask(() => clearAuth());
+      console.error("Invalid token:", error);
+      clearAuth();
+    } finally {
+      setLoading(false); // finished processing token
     }
   }, [token, scheduleLogout, clearAuth]);
 
@@ -92,7 +92,7 @@ export function AuthProvider({ children }) {
     };
   }, [clearAuth]);
 
-  // Function to handle login (both email/password & Google)
+  // Login function
   const login = (newToken, callback) => {
     try {
       const decoded = jwtDecode(newToken);
@@ -113,7 +113,9 @@ export function AuthProvider({ children }) {
     clearAuth();
   };
 
-  // Provide AuthContext values to all child components
+  // Provide AuthContext values and wait until token decoded
+  if (loading) return <div>Loading...</div>;
+
   return (
     <AuthContext.Provider value={{ user, login, logout, token }}>
       {children}

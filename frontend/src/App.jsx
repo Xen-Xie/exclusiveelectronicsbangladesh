@@ -5,16 +5,27 @@ import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import GoogleCallback from "./pages/GoogleCallback";
+import AdminRoute from "./routes/AdminRoute";
+import AdminLayout from "./admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
 
 function App() {
   return (
     <>
       <Routes>
+        {/* User routes */}
         <Route path="/" element={<Layout />}>
-          <Route path="/sign-up" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/google-callback" element={<GoogleCallback />} />
           <Route index element={<Home />} />
+          <Route path="sign-up" element={<SignUp />} />
+          <Route path="login" element={<Login />} />
+          <Route path="google-callback" element={<GoogleCallback />} />
+        </Route>
+
+        {/* Admin routes */}
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+          </Route>
         </Route>
       </Routes>
     </>
