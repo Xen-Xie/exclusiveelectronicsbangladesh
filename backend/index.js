@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { DB } from "./src/config/db.js";
 import userRoutes from "./src/routes/userRoutes.js";
+import productRoutes from "./src/routes/productRoutes.js";
 
 const app = express();
 dotenv.config();
@@ -21,6 +22,7 @@ app.use(
 const url = process.env.MONGO_URL;
 DB(url);
 app.use("/api/user", userRoutes);
+app.use("/api/products", productRoutes);
 
 const port = process.env.PORT || 5000;
 
