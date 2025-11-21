@@ -1,69 +1,50 @@
-import { useEffect, useContext, useState, useCallback } from "react";
-import axios from "axios";
-import { AuthContext } from "../auth/AuthContext";
+import { useContext } from "react";
 import { useNavigate } from "react-router";
+import { GoogleLogin, googleLogout } from "@react-oauth/google";
+import { AuthContext } from "../auth/AuthContext";
+import axios from "axios";
 
-function GoogleButton() {
-  const { login } = useContext(AuthContext);
+function GoogleButton({ showLogout = false }) {
   const navigate = useNavigate();
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const { login, logout } = useContext(AuthContext);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const [message, setMessage] = useState("");
-
-  const handleGoogleResponse = useCallback(
-    async (response) => {
-      try {
-        const idToken = response?.credential || null;
-
-        if (!idToken) {
-          setMessage("No Google credential received");
-          return;
-        }
-
-        const res = await axios.post(
-          `${apiUrl}/api/user/google`,
-          { idToken },
-          { withCredentials: true }
-        );
-
-        login(res.data.token, () => {
-          navigate("/"); // redirect after login
-        });
-      } catch (err) {
-        console.error("Google login failed:", err);
-        setMessage("Google login failed");
-      }
-    },
-    [apiUrl, login, navigate]
-  );
-
-  useEffect(() => {
-    if (!window.google || !clientId) return;
-
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-
-  window.google.accounts.id.initialize({
-  client_id: clientId,
-  callback: handleGoogleResponse,
-  ux_mode: isMobile ? "redirect" : "popup",
-  redirect_uri: "https://exclusiveelectronicbangladesh.netlify.app/google-callback", // explicit, must match Google Console
-});
-
-
-    window.google.accounts.id.renderButton(
-      document.getElementById("googleBtn"),
-      { theme: "outline", size: "large", shape: "pill" }
-    );
-
-    if (!isMobile) window.google.accounts.id.prompt();
-  }, [clientId, handleGoogleResponse]);
+  const handleGoogleLogout = () => {
+    googleLogout(); // clear Google session
+    logout(); // clear app auth state
+    navigate("/login"); // redirect to login
+  };
 
   return (
-    <div className="mt-4 flex flex-col items-center">
-      <div id="googleBtn" className="w-full max-w-[320px]"></div>
-      {message && (
-        <p className="mt-2 text-success font-medium text-center">{message}</p>
+    <div className="flex flex-col items-center mt-4 gap-2">
+      {!showLogout ? (
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              const idToken = credentialResponse.credential;
+              if (!idToken) return;
+
+              const res = await axios.post(
+                `${apiUrl}/api/user/google`,
+                { idToken },
+                { withCredentials: true }
+              );
+
+              login(res.data.token, () => navigate("/"));
+            } catch (err) {
+              console.error("Google login failed:", err);
+            }
+          }}
+          onError={() => console.error("Google Login Failed")}
+          shape="pill"
+        />
+      ) : (
+        <button
+          onClick={handleGoogleLogout}
+          className="px-4 py-2 rounded-full bg-danger text-white hover:bg-danger/50 transition"
+        >
+          Logout from Google
+        </button>
       )}
     </div>
   );
