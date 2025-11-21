@@ -1,4 +1,4 @@
-import { useEffect, useContext, useState } from "react";
+import { useEffect, useContext, useState, useCallback } from "react";
 import axios from "axios";
 import { AuthContext } from "../auth/AuthContext";
 import { useNavigate } from "react-router";
@@ -11,21 +11,23 @@ function GoogleButton() {
 
   const [message, setMessage] = useState("");
 
-  const handleGoogleResponse = async (response) => {
-    try {
-      const res = await axios.post(`${apiUrl}/api/user/google`, {
-        idToken: response.credential,
-      });
+const handleGoogleResponse = useCallback(async (response) => {
+  try {
+    const res = await axios.post(
+      `${apiUrl}/api/user/google`,
+      { idToken: response.credential },
+      { withCredentials: true }
+    );
 
-      login(res.data.token, () => {
-        setMessage(`Login success! Welcome ${res.data.data.name}`);
-        setTimeout(() => navigate("/"), 1500);
-      });
-    } catch (err) {
-      console.error(err);
-      setMessage("Google login failed");
-    }
-  };
+    login(res.data.token, () => {
+      navigate("/");
+    });
+  } catch (err) {
+    console.error("Google login failed:", err);
+    setMessage("Google login failed");
+  }
+}, [apiUrl, login, navigate]);
+
 
   useEffect(() => {
     if (!window.google || !clientId) return;
@@ -44,7 +46,7 @@ function GoogleButton() {
         shape: "pill",
       }
     );
-  }, [clientId]);
+  }, [clientId, handleGoogleResponse]);
 
   return (
     <div className="mt-4 flex flex-col items-center">
