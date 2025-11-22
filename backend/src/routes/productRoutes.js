@@ -19,7 +19,7 @@ router.get("/category/:category", getProductsByCategory);
 router.get("/slug/:slug", getProductBySlug);
 router.get("/:id", getProduct);
 
-// Admin routes (you can add authentication middleware later)
+// Admin routes
 router.post(
   "/",
   authenticateToken,
