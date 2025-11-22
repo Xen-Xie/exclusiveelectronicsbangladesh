@@ -9,6 +9,7 @@ import AdminRoute from "./routes/AdminRoute";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import AddProduct from "./pages/admin/AddProduct";
+import ProductDetails from "./pages/ProductDetails";
 
 function App() {
   return (
@@ -20,13 +21,14 @@ function App() {
           <Route path="sign-up" element={<SignUp />} />
           <Route path="login" element={<Login />} />
           <Route path="google-callback" element={<GoogleCallback />} />
+          <Route path="/products/:id/:slug" element={<ProductDetails />} />
         </Route>
 
         {/* Admin routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="add-product" element={<AddProduct/>} />
+            <Route path="add-product" element={<AddProduct />} />
           </Route>
         </Route>
       </Routes>
