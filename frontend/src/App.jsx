@@ -10,6 +10,7 @@ import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import AddProduct from "./pages/admin/AddProduct";
 import ProductDetails from "./pages/ProductDetails";
+import Products from "./pages/Products";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="google-callback" element={<GoogleCallback />} />
           <Route path="/products/:id/:slug" element={<ProductDetails />} />
+          <Route path="products" element={<Products/>}/>
         </Route>
 
         {/* Admin routes */}
