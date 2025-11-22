@@ -8,6 +8,7 @@ import GoogleCallback from "./pages/GoogleCallback";
 import AdminRoute from "./routes/AdminRoute";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
+import AddProduct from "./pages/admin/AddProduct";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="add-product" element={<AddProduct/>} />
           </Route>
         </Route>
       </Routes>
