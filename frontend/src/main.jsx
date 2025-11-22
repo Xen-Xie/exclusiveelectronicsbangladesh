@@ -6,13 +6,16 @@ import { BrowserRouter } from "react-router";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./auth/AuthProvider.jsx";
+import { CartProvider } from "./context/cartProvider.jsx";
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <AuthProvider>
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-        <StrictMode>
-          <App />
-        </StrictMode>
+        <CartProvider>
+          <StrictMode>
+            <App />
+          </StrictMode>
+        </CartProvider>
       </GoogleOAuthProvider>
     </AuthProvider>
   </BrowserRouter>

@@ -3,6 +3,7 @@ import React, { useState, useContext } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../auth/AuthContext";
+import { useCart } from "../context/useCart";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -14,7 +15,7 @@ const navItems = [
 function Navigation() {
   const { user } = useContext(AuthContext);
   const [openMenu, setOpenMenu] = useState(false);
-  const [cartCount, setCartCount] = useState(2); // demo value
+  const { cartCount } = useCart();
 
   return (
     <nav className="w-full border-b border-bordered bg-primarybg px-4 sm:px-6 py-3 font-inter">
