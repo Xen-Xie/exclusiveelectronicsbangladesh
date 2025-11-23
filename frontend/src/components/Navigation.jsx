@@ -84,6 +84,7 @@ function Navigation() {
           <div className="relative">
             <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
             <AnimatePresence>
+              <Link to="/checkout">
               {cartCount > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
@@ -96,6 +97,7 @@ function Navigation() {
                   {cartCount}
                 </motion.span>
               )}
+              </Link>
             </AnimatePresence>
           </div>
 
