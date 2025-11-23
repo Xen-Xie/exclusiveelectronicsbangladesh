@@ -52,6 +52,7 @@ function ProductDetails() {
       ...product,
       quantity,
       selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
+      salePrice: product.onSale && product.salePrice ? product.salePrice : null,
     });
   };
 

@@ -27,12 +27,31 @@ export function CartProvider({ children }) {
       }
     });
   };
+    // Remove one item
+  const removeItem = (id) => {
+    setCart((prev) => prev.filter((item) => item._id !== id));
+  };
+
+   // Clear all items
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  // Update quantity
+  const updateQty = (id, qty) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item._id === id ? { ...item, quantity: qty } : item
+      )
+    );
+  };
+
 
   // Calculate total cart count
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cart, cartCount, addToCart }}>
+    <CartContext.Provider value={{ cart, cartCount, addToCart, removeItem,clearCart, updateQty }}>
       {children}
     </CartContext.Provider>
   );
