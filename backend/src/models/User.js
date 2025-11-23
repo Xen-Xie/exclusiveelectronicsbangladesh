@@ -21,6 +21,8 @@ const userSchema = new Schema(
     googleId: { type: String, default: null },
     phoneNumber: { type: String },
     address: { type: String, default: "" },
+    city: { type: String, default: "" },
+    postalCode: { type: String, default: "" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
   },
   { timestamps: true }

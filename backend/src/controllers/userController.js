@@ -108,3 +108,34 @@ export const getUserById = async (req, res) => {
     res.status(500).json({ status: "fail", message: error.message });
   }
 };
+
+// Update user info (only phoneNumber and address)
+export const updateUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { phoneNumber, address, city, postalCode } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        phoneNumber,
+        address,
+        city,
+        postalCode,
+      },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser)
+      return res
+        .status(404)
+        .json({ status: "fail", message: "User not found" });
+
+    res.status(200).json({
+      status: "success",
+      data: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
