@@ -8,15 +8,17 @@ const orderItemSchema = new mongoose.Schema({
   },
   name: { type: String, required: true },
   price: { type: Number, required: true },
+  salePrice: { type: Number },
+  originalPrice: { type: Number },
   qty: { type: Number, min: 1, required: true },
   sku: String,
 });
 
 const paymentSchema = new mongoose.Schema({
-  method: String, // sslcommerz, manual
+  method: String,
   status: {
     type: String,
-    enum: ["pending", "paid", "failed", "refunded","cash_on_delivery"],
+    enum: ["pending", "paid", "failed", "refunded", "cash_on_delivery"],
     default: "pending",
   },
   transactionId: String,

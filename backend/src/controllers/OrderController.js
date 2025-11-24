@@ -59,13 +59,18 @@ export const createOrder = async (req, res) => {
         });
       }
 
-      const price = product.price;
+      const price =
+        product.salePrice !== undefined && product.salePrice !== null
+          ? product.salePrice
+          : product.price;
       subtotal += price * item.qty;
 
       finalItems.push({
         product: product._id,
         name: product.name,
         price,
+        salePrice: product.salePrice,
+        originalPrice: product.price,
         qty: item.qty,
         sku: product.sku || "",
       });
@@ -99,9 +104,11 @@ export const createOrder = async (req, res) => {
 
 export const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id }).sort({
-      createdAt: -1,
-    });
+    const orders = await Order.find({ user: req.user._id })
+      .sort({
+        createdAt: -1,
+      })
+      .populate("items.product", "name images price");
     return res.json({
       status: "success",
       results: orders.length,
