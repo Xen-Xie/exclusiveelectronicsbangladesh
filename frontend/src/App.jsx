@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
 import ProductsAdmin from "./pages/admin/ProductsAdmin";
+import OrdersAdmin from "./pages/admin/OrdersAdmin";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="add-product" element={<AddProduct />} />
             <Route path="products" element={<ProductsAdmin />} />
+            <Route path="orders" element={<OrdersAdmin />} />
           </Route>
         </Route>
       </Routes>

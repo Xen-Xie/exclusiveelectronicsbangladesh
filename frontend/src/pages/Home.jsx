@@ -37,7 +37,7 @@ function Home() {
   // If still loading, render a skeleton loading state
   if (loading) {
     return (
-      <div className="px-4 max-w-[1400px] mx-auto">
+      <div className="max-w-7xl mx-auto p-6 font-urbanist">
         {/* Include SearchBar even during loading for consistency */}
         <SearchBar products={products} onSearch={setFilteredProducts} />
 
@@ -47,7 +47,7 @@ function Home() {
         {/* Grid container for skeleton cards */}
         <div
           className="
-            grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 justify-items-center mb-8 font-inter
+            grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
           "
         >
           {/* Render 6 skeleton cards to simulate loading */}
@@ -60,7 +60,7 @@ function Home() {
   }
   // Main render when not loading
   return (
-    <div className="px-4 max-w-[1400px] mx-auto">
+    <div className="max-w-7xl mx-auto p-6 font-urbanist">
       {/* searchbar */}
       <SearchBar products={products} onSearch={setFilteredProducts} />
 
@@ -73,7 +73,8 @@ function Home() {
       ) : (
         <div
           className="
-            grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 justify-items-center mb-8 font-inter
+            grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
+            justify-items-center px-4
           "
         >
           {/* Map over filtered products and render a DisplayCard for each */}

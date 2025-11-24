@@ -16,6 +16,7 @@ function ProductDetails() {
   const [error, setError] = useState("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -32,46 +33,82 @@ function ProductDetails() {
     };
     if (id) fetchProduct();
   }, [id, apiUrl]);
+
   const { cart, addToCart } = useCart();
-  const handleAddToCart = () => {
+
+  const handleAddToCart = async () => {
     if (!product) return;
 
-    // Find if product is already in cart
-    const existingInCart = cart.find((item) => item._id === product._id);
-    const existingQty = existingInCart ? existingInCart.quantity : 0;
+    try {
+      setAddingToCart(true);
 
-    // Total quantity after adding
-    const totalQty = existingQty + quantity;
+      // Find if product is already in cart
+      const existingInCart = cart.find((item) => item._id === product._id);
+      const existingQty = existingInCart ? existingInCart.quantity : 0;
 
-    if (totalQty > product.stock) {
-      alert(`You can only add ${product.stock} ${product.name} in total`);
-      return;
+      // Total quantity after adding
+      const totalQty = existingQty + quantity;
+
+      if (totalQty > product.stock) {
+        alert(`You can only add ${product.stock} ${product.name} in total`);
+        return;
+      }
+
+      // Add to cart
+      addToCart({
+        ...product,
+        quantity,
+        selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
+        salePrice:
+          product.onSale && product.salePrice ? product.salePrice : null,
+      });
+
+      // Update local product state to reflect real-time stock
+      setProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              stock: prev.stock, // Stock will be decremented when order is paid
+            }
+          : null
+      );
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      alert("Failed to add product to cart");
+    } finally {
+      setAddingToCart(false);
     }
-
-    addToCart({
-      ...product,
-      quantity,
-      selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
-      salePrice: product.onSale && product.salePrice ? product.salePrice : null,
-    });
   };
+
   // Buy Now Function
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!product) return;
     if (!user) {
       navigate("/login");
       return;
     }
 
-    // Add product to cart first
-    addToCart({
-      ...product,
-      quantity: Math.min(quantity, product.stock),
-      stock: product.stock,
-      selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
-      salePrice: product.onSale && product.salePrice ? product.salePrice : null,
-    });
-    navigate("/checkout");
+    try {
+      setAddingToCart(true);
+
+      // Add product to cart first
+      addToCart({
+        ...product,
+        quantity: Math.min(quantity, product.stock),
+        stock: product.stock,
+        selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
+        salePrice:
+          product.onSale && product.salePrice ? product.salePrice : null,
+      });
+
+      // Navigate to checkout
+      navigate("/checkout");
+    } catch (err) {
+      console.error("Error in buy now:", err);
+      alert("Failed to process buy now");
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const handleQuantityChange = (change) => {
@@ -122,6 +159,11 @@ function ProductDetails() {
 
   const images = product.images || [];
   const mainImage = images[selectedImageIndex]?.url || "/placeholder.jpg";
+
+  // Calculate available stock considering cart items
+  const cartItem = cart.find((item) => item._id === product._id);
+  const reservedInCart = cartItem ? cartItem.quantity : 0;
+  const availableStock = Math.max(0, product.stock - reservedInCart);
 
   return (
     <div className="max-w-7xl mx-auto p-6 font-urbanist">
@@ -201,12 +243,19 @@ function ProductDetails() {
               )}
             </div>
 
-            {/* Stock */}
-            <div className="mb-4">
+            {/* Stock Information */}
+            <div className="mb-4 space-y-1">
               {product.stock > 0 ? (
-                <span className="text-success font-medium">
-                  In Stock ({product.stock})
-                </span>
+                <>
+                  <span className="text-success font-medium">
+                    In Stock ({availableStock} available)
+                  </span>
+                  {reservedInCart > 0 && (
+                    <p className="text-xs text-warning">
+                      {reservedInCart} item(s) in your cart
+                    </p>
+                  )}
+                </>
               ) : (
                 <span className="text-danger font-medium">Out of Stock</span>
               )}
@@ -250,12 +299,15 @@ function ProductDetails() {
               <span className="px-4 py-2 border-x">{quantity}</span>
               <button
                 onClick={() => handleQuantityChange(1)}
-                disabled={quantity >= product.stock}
+                disabled={quantity >= availableStock}
                 className="px-3 py-2 text-gray-600 disabled:text-gray-300 hover:bg-gray-100 transition"
               >
                 +
               </button>
             </div>
+            <span className="text-sm text-info font-inter">
+              Max: {availableStock}
+            </span>
           </div>
 
           {/* Action Buttons */}
@@ -264,22 +316,38 @@ function ProductDetails() {
               variant="outline"
               onClick={handleAddToCart}
               disabled={
-                product.stock === 0 ||
-                (cart.find((item) => item._id === product._id)?.quantity ||
-                  0) >= product.stock
+                product.stock === 0 || availableStock === 0 || addingToCart
               }
               className="flex-1 py-3 px-6 rounded-xl hover:bg-primary-dark disabled:bg-secondary/25 transition font-semibold flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-cart-plus"></i> Add to Cart
+              {addingToCart ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin"></i> Adding...
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-cart-plus"></i> Add to Cart
+                </>
+              )}
             </Btn>
 
             <Btn
               variant="success"
               onClick={handleBuyNow}
-              disabled={product.stock === 0}
+              disabled={
+                product.stock === 0 || availableStock === 0 || addingToCart
+              }
               className="flex-1 bg-success text-white py-3 px-6 rounded-xl hover:bg-success-dark disabled:bg-gray-300 transition font-semibold flex items-center justify-center gap-2"
             >
-              <i className="fa-solid fa-bolt"></i> Buy Now
+              {addingToCart ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin"></i> Processing...
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-bolt"></i> Buy Now
+                </>
+              )}
             </Btn>
           </div>
         </div>
