@@ -1,19 +1,16 @@
-import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 
 /**
  * Business rules summary:
  * - Create order: validate items & totals, DO NOT decrement stock yet.
- * - Mark order paid: atomically decrement stock for items (fail if insufficient).
+ * - Mark order paid: decrement stock for items (fail if insufficient).
  * - Cancel order:
- *     - If order was paid -> restore stock atomically.
+ *     - If order was paid -> restore stock.
  *     - If not paid -> simply set status to 'cancelled'.
  * - Update status (admin):
  *     - When transitioning to 'delivered' -> increment product.sold.
  *     - Other transitions handled normally.
- *
- * All stock / sold changes use transactions for atomicity.
  */
 
 // Helper: ensure user is owner or admin
@@ -101,7 +98,6 @@ export const createOrder = async (req, res) => {
 };
 
 // Get current user's orders
-
 export const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id })
@@ -172,102 +168,87 @@ export const getAllOrders = async (req, res) => {
 };
 
 // Mark order as paid
-
 export const markOrderPaid = async (req, res) => {
-  const session = await mongoose.startSession();
   try {
-    const { transactionId, gatewayResponse, method = "sslcommerz" } = req.body;
+    const { transactionId, gatewayResponse, method = "manual" } = req.body;
     const orderId = req.params.id;
 
     let order = await Order.findById(orderId);
     if (!order) {
-      await session.endSession();
       return res
         .status(404)
         .json({ status: "fail", message: "Order not found" });
     }
 
     if (!isOwnerOrAdmin(order, req.user)) {
-      await session.endSession();
       return res.status(403).json({ status: "fail", message: "Access denied" });
     }
 
     if (order.payment?.status === "paid") {
-      await session.endSession();
       return res
         .status(400)
         .json({ status: "fail", message: "Order already paid" });
     }
 
-    // Start transaction to decrement stock atomically
-    let updatedOrder = null;
-    await session.withTransaction(async () => {
-      // Re-check stock for each item and decrement
-      for (const item of order.items) {
-        const prod = await Product.findById(item.product).session(session);
+    // Decrement stock for each item
+    for (const item of order.items) {
+      const product = await Product.findById(item.product);
 
-        if (!prod) {
-          throw new Error(`Product not found: ${item.product}`);
-        }
-
-        if (prod.stock < item.qty) {
-          throw new Error(
-            `Insufficient stock for ${prod.name} (have ${prod.stock}, need ${item.qty})`
-          );
-        }
-
-        // decrement stock
-        prod.stock -= item.qty;
-
-        // update status if stock becomes 0
-        if (prod.stock === 0 && prod.status !== "archived") {
-          prod.status = "soldout";
-        }
-
-        await prod.save({ session });
+      if (!product) {
+        return res.status(404).json({
+          status: "fail",
+          message: `Product not found: ${item.product}`,
+        });
       }
 
-      // update order payment & status
-      order.payment = order.payment || {};
-      order.payment.status = "paid";
-      order.payment.method = method;
-      order.payment.transactionId = transactionId;
-      order.payment.gatewayResponse = gatewayResponse;
-      order.payment.paidAt = new Date();
+      if (product.stock < item.qty) {
+        return res.status(400).json({
+          status: "fail",
+          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.qty}`,
+        });
+      }
 
-      order.status = "paid";
-      await order.save({ session });
+      // Decrement stock
+      product.stock -= item.qty;
 
-      updatedOrder = order;
-    });
+      // Update status if stock becomes 0
+      if (product.stock === 0 && product.status !== "archived") {
+        product.status = "soldout";
+      }
 
-    await session.endSession();
+      await product.save();
+    }
+
+    // Update order payment & status
+    order.payment = order.payment || {};
+    order.payment.status = "paid";
+    order.payment.method = method;
+    order.payment.transactionId = transactionId;
+    order.payment.gatewayResponse = gatewayResponse;
+    order.payment.paidAt = new Date();
+    order.status = "paid";
+
+    await order.save();
+
     return res.json({
       status: "success",
-      message: "Order marked as paid",
-      data: updatedOrder,
+      message: "Order marked as paid and stock updated",
+      data: order,
     });
   } catch (error) {
-    await session.endSession();
     console.error("Mark Paid Error:", error);
-    return res.status(400).json({
+    return res.status(500).json({
       status: "fail",
-      message: error.message || "Failed to mark paid",
+      message: error.message || "Failed to mark order as paid",
     });
   }
 };
 
 // Cancel order
-
-// If paid restore stock atomically and set status to cancelled (and mark payment.refunded maybe)
-// If not paid just set cancelled
-
 export const cancelOrder = async (req, res) => {
-  const session = await mongoose.startSession();
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
-      await session.endSession();
       return res
         .status(404)
         .json({ status: "fail", message: "Order not found" });
@@ -275,43 +256,42 @@ export const cancelOrder = async (req, res) => {
 
     // owner or admin can cancel
     if (!isOwnerOrAdmin(order, req.user)) {
-      await session.endSession();
       return res.status(403).json({ status: "fail", message: "Access denied" });
     }
 
     // If already cancelled
     if (order.status === "cancelled") {
-      await session.endSession();
       return res
         .status(400)
         .json({ status: "fail", message: "Order already cancelled" });
     }
 
-    // If paid restore stock atomically
+    // If paid, restore stock
     if (order.payment && order.payment.status === "paid") {
-      await session.withTransaction(async () => {
-        // restore stock
-        for (const item of order.items) {
-          const prod = await Product.findById(item.product).session(session);
-          if (!prod) throw new Error(`Product not found: ${item.product}`);
-
-          prod.stock += item.qty;
-
-          // if product was soldout and stock > 0, set status back to active (unless archived)
-          if (prod.stock > 0 && prod.status === "soldout") {
-            prod.status = "active";
-          }
-
-          await prod.save({ session });
+      // Restore stock for each item
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          console.error(
+            `Product not found during cancellation: ${item.product}`
+          );
+          continue;
         }
 
-        // mark order cancelled and optionally note refund needed
-        order.status = "cancelled";
-        // optionally set payment.status = 'refunded' if need later
-        await order.save({ session });
-      });
+        // Restore stock
+        product.stock += item.qty;
 
-      await session.endSession();
+        // If product was soldout and stock > 0, set status back to active
+        if (product.stock > 0 && product.status === "soldout") {
+          product.status = "active";
+        }
+
+        await product.save();
+      }
+
+      order.status = "cancelled";
+      await order.save();
+
       return res.json({
         status: "success",
         message: "Paid order cancelled and stock restored",
@@ -322,14 +302,13 @@ export const cancelOrder = async (req, res) => {
     // If not paid: just cancel
     order.status = "cancelled";
     await order.save();
-    await session.endSession();
+
     return res.json({
       status: "success",
       message: "Order cancelled",
       data: order,
     });
   } catch (error) {
-    await session.endSession();
     console.error("Cancel Order Error:", error);
     return res.status(500).json({
       status: "fail",
@@ -341,10 +320,8 @@ export const cancelOrder = async (req, res) => {
 // Update order status
 
 export const updateOrderStatus = async (req, res) => {
-  const session = await mongoose.startSession();
   try {
     if (req.user.role !== "admin") {
-      await session.endSession();
       return res.status(403).json({ status: "fail", message: "Admin only" });
     }
 
@@ -359,7 +336,6 @@ export const updateOrderStatus = async (req, res) => {
       "returned",
     ];
     if (!allowed.includes(status)) {
-      await session.endSession();
       return res
         .status(400)
         .json({ status: "fail", message: "Invalid status" });
@@ -367,36 +343,67 @@ export const updateOrderStatus = async (req, res) => {
 
     const order = await Order.findById(req.params.id);
     if (!order) {
-      await session.endSession();
       return res
         .status(404)
         .json({ status: "fail", message: "Order not found" });
     }
 
-    // If trying to set to delivered increment sold counts (atomically)
+    // If trying to set to delivered, increment sold counts
     if (status === "delivered" && order.status !== "delivered") {
-      // atomic increment sold
-      await session.withTransaction(async () => {
-        for (const item of order.items) {
-          const prod = await Product.findById(item.product).session(session);
-          if (!prod) throw new Error(`Product not found: ${item.product}`);
-
-          prod.sold = (prod.sold || 0) + item.qty;
-
-          // If stock is 0 and status not archived, keep soldout (no change)
-          // Save product
-          await prod.save({ session });
+      // Increment sold counts for each item
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          console.error(`Product not found: ${item.product}`);
+          continue;
         }
 
-        order.status = "delivered";
-        order.updatedAt = new Date();
-        await order.save({ session });
-      });
+        product.sold = (product.sold || 0) + item.qty;
+        await product.save();
+      }
 
-      await session.endSession();
+      order.status = "delivered";
+      order.updatedAt = new Date();
+      await order.save();
+
       return res.json({
         status: "success",
         message: "Order marked delivered and sold counts updated",
+        data: order,
+      });
+    }
+
+    // Handle returned status - restore stock if order was previously delivered
+    if (status === "returned" && order.status === "delivered") {
+      // Restore stock for returned items
+      for (const item of order.items) {
+        const product = await Product.findById(item.product);
+        if (!product) {
+          console.error(`Product not found during return: ${item.product}`);
+          continue;
+        }
+
+        // Restore stock
+        product.stock += item.qty;
+
+        // Decrement sold count since product is returned
+        product.sold = Math.max(0, (product.sold || 0) - item.qty);
+
+        // Update status if needed
+        if (product.stock > 0 && product.status === "soldout") {
+          product.status = "active";
+        }
+
+        await product.save();
+      }
+
+      order.status = "returned";
+      order.updatedAt = new Date();
+      await order.save();
+
+      return res.json({
+        status: "success",
+        message: "Order returned and stock restored",
         data: order,
       });
     }
@@ -405,14 +412,13 @@ export const updateOrderStatus = async (req, res) => {
     order.status = status;
     order.updatedAt = new Date();
     await order.save();
-    await session.endSession();
+
     return res.json({
       status: "success",
       message: "Status updated",
       data: order,
     });
   } catch (error) {
-    await session.endSession();
     console.error("Update Status Error:", error);
     return res.status(500).json({
       status: "fail",
