@@ -55,7 +55,7 @@ function ProductDetails() {
       salePrice: product.onSale && product.salePrice ? product.salePrice : null,
     });
   };
-// Buy Now Function
+  // Buy Now Function
   const handleBuyNow = () => {
     if (!product) return;
     if (!user) {
@@ -66,7 +66,8 @@ function ProductDetails() {
     // Add product to cart first
     addToCart({
       ...product,
-      quantity,
+      quantity: Math.min(quantity, product.stock),
+      stock: product.stock,
       selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
       salePrice: product.onSale && product.salePrice ? product.salePrice : null,
     });

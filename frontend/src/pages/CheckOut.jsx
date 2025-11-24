@@ -175,8 +175,18 @@ function CheckOut() {
                   <span>{item.quantity}</span>
                   <Btn
                     variant="outline"
-                    className="px-2 py-1 border rounded"
-                    onClick={() => updateQty(item._id, item.quantity + 1)}
+                    className={`px-2 py-1 border rounded ${
+                      item.quantity >= item.stock
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={item.quantity >= item.stock}
+                    onClick={() =>
+                      updateQty(
+                        item._id,
+                        Math.min(item.stock, item.quantity + 1)
+                      )
+                    }
                   >
                     +
                   </Btn>
@@ -187,13 +197,13 @@ function CheckOut() {
                 <p className="font-semibold text-secondary/85">
                   {item.salePrice ? (
                     <>
-                      <span className="line-through text-secondary/85">
+                      <span className="line-through text-secondary/85 text-sm sm:text-base md:text-md lg:text-lg">
                         ৳{item.price * item.quantity}
                       </span>{" "}
-                      <span className="text-danger">
+                      <span className="text-danger text-xs sm:text-base md:text-md">
                         ৳{item.salePrice * item.quantity}
                       </span>{" "}
-                      <span className="bg-danger text-primarybg text-xs px-2 py-1 rounded">
+                      <span className="bg-danger text-primarybg text-xs px-1 md:px-2 py-0.5 md:py-1 rounded whitespace-nowrap">
                         Save{" "}
                         {Math.round(
                           ((item.price - item.salePrice) / item.price) * 100
@@ -230,7 +240,7 @@ function CheckOut() {
               (field) => (
                 <input
                   key={field}
-                  className="border px-3 py-1.5 rounded-lg outline-none transition"
+                  className="border px-3 py-1.5 rounded-lg outline-none transition w-full"
                   placeholder={field.replace(/([A-Z])/g, " $1")}
                   value={form[field]}
                   onChange={(e) =>
