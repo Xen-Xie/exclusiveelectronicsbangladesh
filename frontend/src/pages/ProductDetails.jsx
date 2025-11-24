@@ -55,10 +55,22 @@ function ProductDetails() {
       salePrice: product.onSale && product.salePrice ? product.salePrice : null,
     });
   };
-
+// Buy Now Function
   const handleBuyNow = () => {
-    if (!user) navigate("/login");
-    else navigate("/checkout");
+    if (!product) return;
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    // Add product to cart first
+    addToCart({
+      ...product,
+      quantity,
+      selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
+      salePrice: product.onSale && product.salePrice ? product.salePrice : null,
+    });
+    navigate("/checkout");
   };
 
   const handleQuantityChange = (change) => {
