@@ -17,6 +17,9 @@ import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
 import ProductsAdmin from "./pages/admin/ProductsAdmin";
 import OrdersAdmin from "./pages/admin/OrdersAdmin";
+import { PaymentSuccess } from "./payments/PaymentSuccess";
+import { PaymentCancelled } from "./payments/PaymentCancelled";
+import { PaymentFailed } from "./payments/PaymentFailed";
 
 function App() {
   return (
@@ -35,6 +38,9 @@ function App() {
           <Route path="profile/:tab?" element={<Profile />} />
           <Route path="about" element={<AboutUs />} />
           <Route path="contact" element={<Contact />} />
+          <Route path="payment-success" element={<PaymentSuccess />} />
+          <Route path="payment-cancelled" element={<PaymentCancelled />} />
+          <Route path="payment-failed" element={<PaymentFailed />} />
         </Route>
 
         {/* Admin routes */}
