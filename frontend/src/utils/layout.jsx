@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet } from "react-router";
 import Navigation from "../components/Navigation";
 import Footer from "../components/Footer";
+import WhatsAppButton from "../components/Common/WhatsAppButton";
 
 function Layout() {
   return (
@@ -12,6 +13,7 @@ function Layout() {
           <Outlet />
           
         </main>
+        <WhatsAppButton />
         <Footer />
         
       </div>

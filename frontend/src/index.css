@@ -17,3 +17,12 @@
  --font-inter: 'Inter', sans-serif;
 --breakpoint-xs: 360px;
 }
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+.animate-float {
+  animation: float 2s ease-in-out infinite;
+}
