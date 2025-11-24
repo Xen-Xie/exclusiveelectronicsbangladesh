@@ -13,6 +13,8 @@ import ProductDetails from "./pages/ProductDetails";
 import Products from "./pages/Products";
 import CheckOut from "./pages/CheckOut";
 import Profile from "./pages/Profile";
+import AboutUs from "./pages/AboutUs";
+import Contact from "./pages/Contact";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
           <Route path="checkout" element={<CheckOut />} />
           {/* Profile routes */}
           <Route path="profile/:tab?" element={<Profile />} />
+          <Route path="about" element={<AboutUs />} />
+          <Route path="contact" element={<Contact />} />
         </Route>
 
         {/* Admin routes */}
