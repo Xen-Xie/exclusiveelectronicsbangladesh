@@ -12,6 +12,9 @@ export default function ProductsAdmin() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 25;
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -31,6 +34,7 @@ export default function ProductsAdmin() {
 
   const handleSearch = (results) => {
     setFilteredProducts(results);
+    setCurrentPage(1); // Reset to first page after search
   };
 
   const categories = [...new Set(filteredProducts.map((p) => p.category))];
@@ -56,6 +60,15 @@ export default function ProductsAdmin() {
     }
   };
 
+  // Pagination logic
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
   return (
     <div className="max-w-7xl mx-auto p-6 font-urbanist">
       {/* Search */}
@@ -76,9 +89,11 @@ export default function ProductsAdmin() {
             </div>
           ))
         : categories.map((cat) => {
-            const catProducts = filteredProducts.filter(
+            const catProducts = currentProducts.filter(
               (p) => p.category === cat
             );
+
+            if (catProducts.length === 0) return null;
 
             return (
               <div key={cat} className="mb-10">
@@ -112,6 +127,33 @@ export default function ProductsAdmin() {
               </div>
             );
           })}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3 mt-6">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
