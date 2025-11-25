@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 // Create User
 export const createUser = async (req, res) => {
   try {
-    const { name, email, password, phoneNumber, address } = req.body;
+    const { name, email, password, phoneNumber, address, googleId } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -14,16 +14,27 @@ export const createUser = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: "Email already exists" });
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // Hash password only if not Google user
+    let hashedPassword;
+    if (!googleId) {
+      if (!password)
+        return res
+          .status(400)
+          .json({ status: "fail", message: "Password is required" });
+      hashedPassword = await bcrypt.hash(password, 12);
+    }
 
-    const user = await User.create({
+    // Build user object dynamically
+    const userData = {
       name,
       email,
-      password: hashedPassword,
       phoneNumber,
       address,
-    });
+      ...(googleId && { googleId }),
+      ...(hashedPassword && { password: hashedPassword }),
+    };
+
+    const user = await User.create(userData);
 
     res.status(201).json({
       status: "success",
@@ -37,6 +48,15 @@ export const createUser = async (req, res) => {
       },
     });
   } catch (error) {
+    // Check for duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: "fail",
+        message: `Duplicate field value entered: ${
+          Object.keys(error.keyValue)[0]
+        }`,
+      });
+    }
     res.status(500).json({ status: "fail", message: error.message });
   }
 };

@@ -18,12 +18,11 @@ const userSchema = new Schema(
       },
       match: [/^.{6,}$/, "Password must be at least 6 characters"],
     },
-    googleId: {
-      type: String,
-      unique: true,
-      sparse: true,
-      default: null,
-    },
+googleId: {
+  type: String,
+  unique: true,
+  sparse: true, 
+},
     phoneNumber: { type: String },
     address: { type: String, default: "" },
     city: { type: String, default: "" },
