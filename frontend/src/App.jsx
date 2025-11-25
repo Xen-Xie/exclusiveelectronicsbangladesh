@@ -20,6 +20,7 @@ import OrdersAdmin from "./pages/admin/OrdersAdmin";
 import { PaymentSuccess } from "./payments/PaymentSuccess";
 import { PaymentCancelled } from "./payments/PaymentCancelled";
 import { PaymentFailed } from "./payments/PaymentFailed";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
             <Route path="add-product" element={<AddProduct />} />
             <Route path="products" element={<ProductsAdmin />} />
             <Route path="orders" element={<OrdersAdmin />} />
+            <Route path="users" element={<AdminUsers />} />
           </Route>
         </Route>
       </Routes>
