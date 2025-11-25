@@ -5,6 +5,8 @@ import {
   getAllUsers,
   getUserById,
   updateUser,
+  deleteUser,
+  toggleUserRole,
 } from "../controllers/userController.js";
 import { googleAuth } from "../controllers/googleAuth.js";
 import { authenticateToken, isAdmin } from "../middleware/authorization.js";
@@ -21,9 +23,10 @@ router.put("/update", authenticateToken, updateUser);
 router.post("/google", googleAuth);
 
 // Get all users
-router.get("/", isAdmin, getAllUsers);
+router.get("/", authenticateToken, isAdmin, getAllUsers);
 
 // Get single user by ID
 router.get("/:id", getUserById);
-
+router.delete("/:id", authenticateToken, isAdmin, deleteUser);
+router.patch("/toggle-role/:id", authenticateToken, isAdmin, toggleUserRole);
 export default router;
