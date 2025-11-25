@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useContext } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../auth/AuthContext";
 import { useCart } from "../context/useCart";
@@ -13,9 +13,14 @@ const navItems = [
 ];
 
 function Navigation() {
-  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { user, logout } = useContext(AuthContext);
   const [openMenu, setOpenMenu] = useState(false);
   const { cartCount } = useCart();
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <nav className="w-full border-b border-bordered bg-primarybg px-4 sm:px-6 py-3 font-inter">
@@ -171,6 +176,20 @@ function Navigation() {
                   )}
                 </li>
               </ul>
+              {user && (
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setOpenMenu(false);
+                  }}
+                  className="flex items-center gap-4 w-full rounded-lg text-left mt-auto pt-4"
+                >
+                  <div className="w-8 flex items-center justify-center">
+                    <i className="fa-solid fa-right-from-bracket text-lg"></i>
+                  </div>
+                  <span className="text-sm font-medium">Logout</span>
+                </button>
+              )}
             </motion.div>
           </>
         )}
