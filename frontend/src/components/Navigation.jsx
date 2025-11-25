@@ -82,24 +82,31 @@ function Navigation() {
         <div className="flex md:hidden gap-4 items-center relative">
           {/* Mobile Cart */}
           <div className="relative">
-            <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
-            <AnimatePresence>
-              <Link to="/checkout">
-              {cartCount > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                  key={cartCount}
-                  className="absolute -top-2 -right-2 bg-danger text-white text-xs px-1.5 py-0.5 rounded-full"
-                >
-                  {cartCount}
-                </motion.span>
-              )}
-              </Link>
-            </AnimatePresence>
+            <Link to="/checkout">
+              <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
+              <AnimatePresence>
+                {cartCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    key={cartCount}
+                    className="absolute -top-2 -right-2 bg-danger text-white text-xs px-1.5 py-0.5 rounded-full"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
           </div>
+
+          {/* Mobile User Icon only when logged out */}
+          {!user && (
+            <Link to="/sign-up">
+              <i className="fa-solid fa-user text-2xl"></i>
+            </Link>
+          )}
 
           {/* Hamburger Icon */}
           <button onClick={() => setOpenMenu((prev) => !prev)}>
