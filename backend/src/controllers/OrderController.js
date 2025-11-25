@@ -449,3 +449,101 @@ export const deleteOrder = async (req, res) => {
       .json({ status: "fail", message: "Server error", error: error.message });
   }
 };
+
+// Get orders with time period filter
+export const getOrdersByPeriod = async (req, res) => {
+  try {
+    const { period, date, startDate, endDate } = req.query;
+
+    let dateFilter = {};
+    const now = new Date();
+
+    if (period && date) {
+      switch (period) {
+        case "today": {
+          const start = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+          );
+          const end = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59
+          );
+          dateFilter = { createdAt: { $gte: start, $lte: end } };
+          break;
+        }
+
+        case "week": {
+          const selectedDate = new Date(date);
+          const dayOfWeek = selectedDate.getDay();
+          const start = new Date(selectedDate);
+          start.setDate(selectedDate.getDate() - dayOfWeek);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(start);
+          end.setDate(start.getDate() + 6);
+          end.setHours(23, 59, 59, 999);
+          dateFilter = { createdAt: { $gte: start, $lte: end } };
+          break;
+        }
+
+        case "month": {
+          const [year, month] = date.split("-");
+          const start = new Date(year, month - 1, 1);
+          const end = new Date(year, month, 0, 23, 59, 59);
+          dateFilter = { createdAt: { $gte: start, $lte: end } };
+          break;
+        }
+
+        case "year": {
+          const start = new Date(date, 0, 1);
+          const end = new Date(date, 11, 31, 23, 59, 59);
+          dateFilter = { createdAt: { $gte: start, $lte: end } };
+          break;
+        }
+
+        default:
+          break;
+      }
+    } else if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter = { createdAt: { $gte: start, $lte: end } };
+    }
+
+    let query = {};
+
+    // If user is not admin, only show their orders
+    if (req.user.role !== "admin") {
+      query.user = req.user._id;
+    }
+
+    // Add date filter if provided
+    if (Object.keys(dateFilter).length > 0) {
+      query = { ...query, ...dateFilter };
+    }
+
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .populate("user", "name email")
+      .populate("items.product", "name images price");
+
+    return res.json({
+      status: "success",
+      results: orders.length,
+      data: orders,
+    });
+  } catch (error) {
+    console.error("Get Orders By Period Error:", error);
+    return res.status(500).json({
+      status: "fail",
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};

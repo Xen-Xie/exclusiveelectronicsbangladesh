@@ -8,6 +8,7 @@ import {
   cancelOrder,
   updateOrderStatus,
   deleteOrder,
+  getOrdersByPeriod,
 } from "../controllers/OrderController.js";
 
 import {
@@ -25,6 +26,7 @@ const router = express.Router();
 router.post("/", authenticateToken, createOrder);
 
 router.get("/my", authenticateToken, getMyOrders);
+router.get("/period", authenticateToken, getOrdersByPeriod);
 router.get("/:id", authenticateToken, getOrderById);
 
 router.get("/", authenticateToken, isAdmin, getAllOrders);
