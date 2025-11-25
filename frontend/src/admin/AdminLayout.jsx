@@ -5,9 +5,9 @@ import AdminNavbar from "./AdminNavbar";
 
 function AdminLayout() {
   return (
-    <div>
+    <div className="flex flex-col min-h-screen relative">
       <AdminNavbar />
-      <main className="p-4 bg-gray-100 min-h-screen">
+      <main className="grow relative z-30">
         <Outlet />
       </main>
     </div>
