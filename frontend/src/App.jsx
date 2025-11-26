@@ -23,6 +23,7 @@ import { PaymentFailed } from "./payments/PaymentFailed";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminHome from "./pages/admin/AdminHome";
 import TermsandConditions from "./pages/TermsandConditions";
+import CategoryPage from "./pages/CategoryPage";
 
 function App() {
   return (
@@ -44,13 +45,14 @@ function App() {
           <Route path="payment-success" element={<PaymentSuccess />} />
           <Route path="payment-cancelled" element={<PaymentCancelled />} />
           <Route path="payment-failed" element={<PaymentFailed />} />
-          <Route path="terms-and-conditions" element={<TermsandConditions/>}/>
+          <Route path="terms-and-conditions" element={<TermsandConditions />} />
+          <Route path="/category/:categoryName" element={<CategoryPage />} />
         </Route>
 
         {/* Admin routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
-          <Route path="/admin" index element={<AdminHome />} />
+            <Route path="/admin" index element={<AdminHome />} />
             <Route path="dashboard/:tab?" element={<Dashboard />} />
             <Route path="add-product" element={<AddProduct />} />
             <Route path="products" element={<ProductsAdmin />} />

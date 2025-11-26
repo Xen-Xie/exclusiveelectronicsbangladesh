@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import DisplayCard from "../components/Common/DisplayCard";
 import SearchBar from "../components/Common/SearchBar";
 import { useNavigate } from "react-router";
+import { AuthContext } from "../auth/AuthContext";
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -10,11 +11,71 @@ function Home() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
+  const [forYouProducts, setForYouProducts] = useState([]);
+  const { user, token } = useContext(AuthContext);
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  // Track user behavior
+  const trackBehavior = async (type, data) => {
+    if (!user || !token) return;
+
+    try {
+      await axios.post(
+        `${apiUrl}/api/behavior/track`,
+        { type, ...data },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (error) {
+      console.error("Failed to track behavior:", error);
+    }
+  };
+
+  // Helper function to get random image
+  const getRandomImage = (images) => {
+    if (!images || images.length === 0) {
+      return "/placeholder.jpg";
+    }
+    const randomIndex = Math.floor(Math.random() * images.length);
+    return images[randomIndex];
+  };
+
   // Fetch products and categories when the component mounts
   useEffect(() => {
+    const fetchRecommendations = async (productsData) => {
+      if (!user || !token) {
+        // If user not logged in, show random products
+        const getRandomProducts = (products, count) => {
+          const shuffled = [...products].sort(() => 0.5 - Math.random());
+          return shuffled.slice(0, count);
+        };
+        const randomProducts = getRandomProducts(productsData, 8);
+        setForYouProducts(randomProducts);
+        return;
+      }
+
+      try {
+        const res = await axios.get(
+          `${apiUrl}/api/behavior/recommendations?limit=8`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setForYouProducts(res.data.data);
+      } catch (error) {
+        console.error("Failed to fetch recommendations:", error);
+        // Fallback to random products
+        const getRandomProducts = (products, count) => {
+          const shuffled = [...products].sort(() => 0.5 - Math.random());
+          return shuffled.slice(0, count);
+        };
+        const randomProducts = getRandomProducts(productsData, 8);
+        setForYouProducts(randomProducts);
+      }
+    };
+
     const fetchData = async () => {
       try {
         // Fetch products
@@ -29,6 +90,9 @@ function Home() {
         setProducts(productsData);
         const featured = productsData.filter((p) => p.featured);
         setFilteredProducts(featured);
+
+        // Fetch personalized recommendations
+        await fetchRecommendations(productsData);
 
         // Extract unique categories from products with their images
         const categoryMap = new Map();
@@ -53,11 +117,12 @@ function Home() {
           }
         });
 
-        // Convert to array of category objects with images
+        // Convert to array of category objects with STABLE images
         const categoriesWithImages = Array.from(categoryMap.entries()).map(
           ([categoryName, images]) => ({
             name: categoryName,
             images: images,
+            displayImage: getRandomImage(images),
             productCount: productsData.filter(
               (p) => p.category === categoryName
             ).length,
@@ -65,7 +130,6 @@ function Home() {
         );
 
         setCategories(categoriesWithImages);
-        console.log("Categories with images:", categoriesWithImages); // Debug log
       } catch (error) {
         console.error("Failed to load data:", error);
       } finally {
@@ -74,20 +138,57 @@ function Home() {
     };
 
     fetchData();
-  }, [apiUrl]);
+  }, [apiUrl, user, token]); // Only stable dependencies
 
-  // Get random image from category images array
-  const getRandomCategoryImage = (images) => {
-    if (!images || images.length === 0) {
-      return "/placeholder.jpg";
+  // Refresh recommendations function
+  const refreshRecommendations = async () => {
+    if (!user || !token) {
+      // If user not logged in, show random products
+      const getRandomProducts = (products, count) => {
+        const shuffled = [...products].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+      };
+      const randomProducts = getRandomProducts(products, 8);
+      setForYouProducts(randomProducts);
+      return;
     }
-    const randomIndex = Math.floor(Math.random() * images.length);
-    return images[randomIndex];
+
+    try {
+      const res = await axios.get(
+        `${apiUrl}/api/behavior/recommendations?limit=8`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setForYouProducts(res.data.data);
+    } catch (error) {
+      console.error("Failed to fetch recommendations:", error);
+      // Fallback to random products
+      const getRandomProducts = (products, count) => {
+        const shuffled = [...products].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+      };
+      const randomProducts = getRandomProducts(products, 8);
+      setForYouProducts(randomProducts);
+    }
   };
 
   // Handle category click
   const handleCategoryClick = (categoryName) => {
+    trackBehavior("category_view", { category: categoryName });
     navigate(`/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`);
+  };
+
+  // Handle product click
+  const handleProductClick = (productId) => {
+    trackBehavior("product_click", { productId });
+  };
+
+  // Handle search
+  const handleSearch = (searchTerm) => {
+    if (searchTerm && searchTerm.trim()) {
+      trackBehavior("search", { searchTerm: searchTerm.trim() });
+    }
   };
 
   // If still loading, render a skeleton loading state
@@ -106,6 +207,18 @@ function Home() {
                 key={index}
                 className="shrink-0 w-32 h-40 bg-gray-200 animate-pulse rounded-lg"
               ></div>
+            ))}
+          </div>
+        </div>
+
+        {/* For You Skeleton */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 font-urbanist">
+            Just For You
+          </h2>
+          <div className="grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <DisplayCard key={index} loading={true} />
             ))}
           </div>
         </div>
@@ -132,7 +245,13 @@ function Home() {
   return (
     <div className="max-w-7xl mx-auto p-6 font-urbanist">
       {/* SearchBar */}
-      <SearchBar products={products} onSearch={setFilteredProducts} />
+      <SearchBar
+        products={products}
+        onSearch={(results, searchTerm) => {
+          setFilteredProducts(results);
+          if (searchTerm) handleSearch(searchTerm);
+        }}
+      />
 
       {/* Categories Section */}
       <div className="mb-8">
@@ -141,50 +260,96 @@ function Home() {
           {categories.length === 0 ? (
             <p className="text-gray-500">No categories found</p>
           ) : (
-            categories.map((category, index) => {
-              const randomImage = getRandomCategoryImage(category.images);
-
-              return (
-                <div
-                  key={index}
-                  onClick={() => handleCategoryClick(category.name)}
-                  className="
-                    shrink-0 w-32 h-40 bg-white rounded-lg shadow-sm
-                    cursor-pointer hover:shadow-md hover:-translate-y-1
-                    transition-all duration-300 border border-gray-200
-                    overflow-hidden group relative flex flex-col
-                  "
-                >
-                  {/* Category Image */}
-                  <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
-                    <img
-                      src={randomImage}
-                      alt={category.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.log("Image failed to load:", randomImage);
-                        e.target.src = "/placeholder.jpg";
-                        e.target.className =
-                          "w-12 h-12 object-contain opacity-50";
-                      }}
-                    />
-                  </div>
-
-                  {/* Category Info */}
-                  <div className="p-3 flex-1 flex flex-col justify-center">
-                    <h3 className="text-sm font-semibold text-center line-clamp-2 text-gray-800 group-hover:text-primary transition-colors">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 text-center mt-1">
-                      {category.productCount}{" "}
-                      {category.productCount === 1 ? "product" : "products"}
-                    </p>
-                  </div>
+            categories.map((category, index) => (
+              <div
+                key={index}
+                onClick={() => handleCategoryClick(category.name)}
+                className="
+                  shrink-0 w-32 h-40 bg-white rounded-lg shadow-sm
+                  cursor-pointer hover:shadow-md hover:-translate-y-1
+                  transition-all duration-300 border border-gray-200
+                  overflow-hidden group relative flex flex-col
+                "
+              >
+                {/* Category Image - Using the STABLE displayImage */}
+                <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
+                  <img
+                    src={category.displayImage}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log(
+                        "Image failed to load:",
+                        category.displayImage
+                      );
+                      e.target.src = "/placeholder.jpg";
+                      e.target.className =
+                        "w-12 h-12 object-contain opacity-50";
+                    }}
+                  />
                 </div>
-              );
-            })
+
+                {/* Category Info */}
+                <div className="p-3 flex-1 flex flex-col justify-center">
+                  <h3 className="text-sm font-semibold text-center line-clamp-2 text-gray-800 group-hover:text-primary transition-colors">
+                    {category.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 text-center mt-1">
+                    {category.productCount}{" "}
+                    {category.productCount === 1 ? "product" : "products"}
+                  </p>
+                </div>
+              </div>
+            ))
           )}
         </div>
+      </div>
+
+      {/* For You Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold font-urbanist">Just For You</h2>
+          <button
+            onClick={refreshRecommendations}
+            className="text-primary hover:text-primary/80 text-sm flex items-center gap-2 transition-colors"
+            title="Refresh recommendations"
+          >
+            <i className="fa-solid fa-rotate"></i>
+            Refresh
+          </button>
+        </div>
+
+        {forYouProducts.length === 0 ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <i className="fa-solid fa-compass text-4xl text-gray-300 mb-3"></i>
+            <p className="text-gray-500 mb-2">
+              {user
+                ? "Browse categories to see personalized recommendations"
+                : "Sign in to get personalized recommendations"}
+            </p>
+            <p className="text-gray-400 text-sm">
+              {user
+                ? "Products based on your browsing history will appear here"
+                : "Login to see products tailored to your interests"}
+            </p>
+          </div>
+        ) : (
+          <div
+            className="
+              grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
+              justify-items-center px-4
+            "
+          >
+            {forYouProducts.map((product) => (
+              <div
+                key={product._id}
+                onClick={() => handleProductClick(product._id)}
+              >
+                <DisplayCard product={product} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Featured Products Section */}
@@ -205,7 +370,12 @@ function Home() {
         >
           {/* Map over filtered products and render a DisplayCard for each */}
           {filteredProducts.map((product) => (
-            <DisplayCard key={product._id} product={product} />
+            <div
+              key={product._id}
+              onClick={() => handleProductClick(product._id)}
+            >
+              <DisplayCard product={product} />
+            </div>
           ))}
         </div>
       )}
