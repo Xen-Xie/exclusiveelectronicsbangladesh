@@ -21,6 +21,7 @@ import { PaymentSuccess } from "./payments/PaymentSuccess";
 import { PaymentCancelled } from "./payments/PaymentCancelled";
 import { PaymentFailed } from "./payments/PaymentFailed";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminHome from "./pages/admin/AdminHome";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
         {/* Admin routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" index element={<AdminHome />} />
             <Route path="dashboard/:tab?" element={<Dashboard />} />
             <Route path="add-product" element={<AddProduct />} />
             <Route path="products" element={<ProductsAdmin />} />
