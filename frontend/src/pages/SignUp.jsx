@@ -18,9 +18,12 @@ function SignUp() {
   const [confirmError, setConfirmError] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
 
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+
   // Email Validation
   const validateEmail = (value) => {
     setEmail(value);
@@ -56,6 +59,16 @@ function SignUp() {
     else setConfirmError("");
   };
 
+  // Terms & Conditions validation
+  const validateTerms = (checked) => {
+    setAgreeToTerms(checked);
+    if (!checked) {
+      setTermsError("You must agree to the Terms & Conditions");
+    } else {
+      setTermsError("");
+    }
+  };
+
   // Form Submit Validation
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +90,11 @@ function SignUp() {
       valid = false;
     }
 
+    if (!agreeToTerms) {
+      setTermsError("You must agree to the Terms & Conditions");
+      valid = false;
+    }
+
     if (!valid) return;
 
     try {
@@ -84,6 +102,7 @@ function SignUp() {
         name,
         email,
         password,
+        agreeToTerms, // Send to backend if needed
       });
 
       navigate("/login");
@@ -92,6 +111,16 @@ function SignUp() {
         error.response?.data?.message || "Sign Up failed. Please try again."
       );
     }
+  };
+
+  // Handle Google signup
+  const handleGoogleSignup = () => {
+    if (!agreeToTerms) {
+      setTermsError("You must agree to the Terms & Conditions");
+      return false;
+    }
+    setTermsError("");
+    return true;
   };
 
   return (
@@ -202,7 +231,38 @@ function SignUp() {
             )}
           </div>
 
-          <Btn variant="primary" type="submit" className="w-full mt-4">
+          {/* Terms & Conditions Checkbox */}
+          <div className="flex flex-col gap-1 mt-2">
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreeToTerms}
+                onChange={(e) => validateTerms(e.target.checked)}
+                className="mt-1 text-primary focus:ring-primary"
+              />
+              <label htmlFor="terms" className="text-sm text-secondary">
+                I agree to the{" "}
+                <Link
+                  to="/terms-and-conditions"
+                  className="text-blue-500 hover:underline font-medium"
+                  target="_blank"
+                >
+                  Terms & Conditions
+                </Link>
+              </label>
+            </div>
+            {termsError && (
+              <p className="text-warning text-sm mx-1 mt-1">{termsError}</p>
+            )}
+          </div>
+
+          <Btn
+            variant="primary"
+            type="submit"
+            className="w-full mt-4"
+            disabled={!agreeToTerms} // visually disable button when terms not agreed
+          >
             Sign Up
           </Btn>
         </div>
@@ -215,7 +275,7 @@ function SignUp() {
         </div>
         <h1 className="text-center font-semibold font-inter">OR</h1>
         <div>
-          <GoogleButton />
+          <GoogleButton onBeforeSignup={handleGoogleSignup} />
         </div>
       </form>
     </div>

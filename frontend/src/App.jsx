@@ -22,6 +22,7 @@ import { PaymentCancelled } from "./payments/PaymentCancelled";
 import { PaymentFailed } from "./payments/PaymentFailed";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminHome from "./pages/admin/AdminHome";
+import TermsandConditions from "./pages/TermsandConditions";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
           <Route path="payment-success" element={<PaymentSuccess />} />
           <Route path="payment-cancelled" element={<PaymentCancelled />} />
           <Route path="payment-failed" element={<PaymentFailed />} />
+          <Route path="terms-and-conditions" element={<TermsandConditions/>}/>
         </Route>
 
         {/* Admin routes */}
