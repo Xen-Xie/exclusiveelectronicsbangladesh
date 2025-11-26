@@ -6,6 +6,7 @@ import userRoutes from "./src/routes/userRoutes.js";
 import productRoutes from "./src/routes/productRoutes.js";
 import orderRoutes from "./src/routes/orderRoutes.js"
 import paymentRoutes from "./src/routes/paymentRoutes.js"
+import behaviorRoutes from "./src/routes/behaviourRoutes.js";
 
 const app = express();
 dotenv.config();
@@ -28,6 +29,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/order",orderRoutes)
 app.use("/api/payment",paymentRoutes)
+app.use("/api/behavior", behaviorRoutes);
 
 const port = process.env.PORT || 5000;
 
