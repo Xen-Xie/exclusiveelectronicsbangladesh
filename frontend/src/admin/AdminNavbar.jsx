@@ -11,6 +11,7 @@ const adminLinks = [
   { name: "Add Product", path: "/admin/add-product" },
   { name: "Orders", path: "/admin/orders" },
   { name: "Users", path: "/admin/users" },
+  { name: "Banners", path: "/admin/banners" },
 ];
 
 function AdminNavbar() {
@@ -91,11 +92,7 @@ function AdminNavbar() {
               <ul className="flex flex-col gap-4">
                 {adminLinks.map((link) => (
                   <li key={link.path}>
-                    <NavLink
-                      to={link.path}
-                      onClick={() => setOpenMenu(false)}
-                      
-                    >
+                    <NavLink to={link.path} onClick={() => setOpenMenu(false)}>
                       {link.name}
                     </NavLink>
                   </li>
@@ -106,7 +103,8 @@ function AdminNavbar() {
                     onClick={handleLogout}
                     className="w-full text-left px-3 py-2 rounded-sm"
                   >
-                    Logout <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                    Logout{" "}
+                    <i className="fa-solid fa-arrow-right-from-bracket"></i>
                   </Btn>
                 </li>
               </ul>

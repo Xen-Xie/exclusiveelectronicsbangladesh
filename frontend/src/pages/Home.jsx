@@ -4,6 +4,7 @@ import DisplayCard from "../components/Common/DisplayCard";
 import SearchBar from "../components/Common/SearchBar";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../auth/AuthContext";
+import BannerCarousel from "../components/Common/BannerCarousel";
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -244,6 +245,7 @@ function Home() {
   // Main render when not loading
   return (
     <div className="max-w-7xl mx-auto p-6 font-urbanist">
+      <BannerCarousel />
       {/* SearchBar */}
       <SearchBar
         products={products}

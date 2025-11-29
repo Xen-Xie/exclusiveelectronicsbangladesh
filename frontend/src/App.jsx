@@ -24,6 +24,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminHome from "./pages/admin/AdminHome";
 import TermsandConditions from "./pages/TermsandConditions";
 import CategoryPage from "./pages/CategoryPage";
+import BannerManager from "./pages/admin/BannerManager";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
             <Route path="products" element={<ProductsAdmin />} />
             <Route path="orders" element={<OrdersAdmin />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="banners" element={<BannerManager />} />
           </Route>
         </Route>
       </Routes>
