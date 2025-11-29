@@ -25,6 +25,7 @@ import AdminHome from "./pages/admin/AdminHome";
 import TermsandConditions from "./pages/TermsandConditions";
 import CategoryPage from "./pages/CategoryPage";
 import BannerManager from "./pages/admin/BannerManager";
+import ErrorPage from "./pages/ErrorPage";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
           <Route path="payment-failed" element={<PaymentFailed />} />
           <Route path="terms-and-conditions" element={<TermsandConditions />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
+          <Route path="*" element={<ErrorPage />} />
         </Route>
 
         {/* Admin routes */}
