@@ -49,9 +49,8 @@ function App() {
           <Route path="payment-failed" element={<PaymentFailed />} />
           <Route path="terms-and-conditions" element={<TermsandConditions />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
-          <Route path="*" element={<ErrorPage />} />
         </Route>
-
+        <Route path="*" element={<ErrorPage />} />
         {/* Admin routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
