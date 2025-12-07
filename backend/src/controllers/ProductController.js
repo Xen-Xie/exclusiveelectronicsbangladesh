@@ -285,3 +285,81 @@ export const deleteProduct = async (req, res) => {
     res.status(500).json({ status: "fail", message: error.message });
   }
 };
+
+// Search Suggestions and Products
+export const getSearchSuggestions = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.trim().length < 2) {
+      return res.status(200).json({
+        status: "success",
+        data: [],
+      });
+    }
+
+    // Search for products by name, category, or tags
+    const suggestions = await Product.find({
+      $or: [
+        { name: { $regex: q, $options: "i" } },
+        { category: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } },
+      ],
+      status: "active",
+    })
+      .select("name slug sku category")
+      .limit(10)
+      .sort({ name: 1 });
+
+    res.status(200).json({
+      status: "success",
+      data: suggestions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "fail",
+      message: error.message,
+    });
+  }
+};
+// Full Product Search
+export const searchProducts = async (req, res) => {
+  try {
+    const { q, searchType = "name" } = req.query;
+
+    if (!q || q.trim().length === 0) {
+      return res.status(200).json({
+        status: "success",
+        data: [],
+      });
+    }
+
+    let query = { status: "active" };
+
+    if (searchType === "sku") {
+      // Exact SKU search
+      query.sku = q.trim();
+    } else {
+      // Search by name, category, slug, or tags
+      query.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { category: { $regex: q, $options: "i" } },
+        { slug: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    const products = await Product.find(query).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      status: "success",
+      results: products.length,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "fail",
+      message: error.message,
+    });
+  }
+};

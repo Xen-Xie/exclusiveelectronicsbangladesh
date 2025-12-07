@@ -7,6 +7,8 @@ import {
   updateProduct,
   deleteProduct,
   getProductsByCategory,
+  getSearchSuggestions,
+  searchProducts,
 } from "../controllers/ProductController.js";
 import { upload, dedupFiles } from "../middleware/upload.js";
 import { authenticateToken, isAdmin } from "../middleware/authorization.js";
@@ -18,6 +20,8 @@ router.get("/", getAllProducts);
 router.get("/category/:category", getProductsByCategory);
 router.get("/slug/:slug", getProductBySlug);
 router.get("/:id", getProduct);
+router.get("/search/suggestions", getSearchSuggestions);
+router.get("/search", searchProducts);
 
 // Admin routes
 router.post(
