@@ -10,6 +10,8 @@ function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // Track search term
+  const [isSearching, setIsSearching] = useState(false); // Track if user is searching
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [forYouProducts, setForYouProducts] = useState([]);
@@ -185,8 +187,12 @@ function Home() {
     trackBehavior("product_click", { productId });
   };
 
-  // Handle search
-  const handleSearch = (searchTerm) => {
+  // Handle search from SearchBar
+  const handleSearch = (searchResults, searchTerm) => {
+    setFilteredProducts(searchResults);
+    setSearchTerm(searchTerm);
+    setIsSearching(searchTerm.trim().length > 0);
+
     if (searchTerm && searchTerm.trim()) {
       trackBehavior("search", { searchTerm: searchTerm.trim() });
     }
@@ -197,7 +203,7 @@ function Home() {
     return (
       <div className="max-w-7xl mx-auto p-6 font-urbanist">
         {/* Include SearchBar even during loading for consistency */}
-        <SearchBar products={products} onSearch={setFilteredProducts} />
+        <SearchBar products={products} onSearch={handleSearch} />
 
         {/* Categories Skeleton */}
         <div className="mb-8">
@@ -246,123 +252,164 @@ function Home() {
   return (
     <div className="max-w-7xl mx-auto p-6 font-urbanist">
       <BannerCarousel />
+
       {/* SearchBar */}
-      <SearchBar
-        products={products}
-        onSearch={(results, searchTerm) => {
-          setFilteredProducts(results);
-          if (searchTerm) handleSearch(searchTerm);
-        }}
-      />
+      <SearchBar products={products} onSearch={handleSearch} />
 
-      {/* Categories Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4 font-urbanist">Categories</h2>
-        <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
-          {categories.length === 0 ? (
-            <p className="text-gray-500">No categories found</p>
+      {/* Show search results header when searching */}
+      {isSearching && (
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold font-urbanist">
+            Search Results for "{searchTerm}"
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Found {filteredProducts.length} product
+            {filteredProducts.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+      )}
+
+      {/* Categories Section - Hide when searching */}
+      {!isSearching && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 font-urbanist">Categories</h2>
+          <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
+            {categories.length === 0 ? (
+              <p className="text-gray-500">No categories found</p>
+            ) : (
+              categories.map((category, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleCategoryClick(category.name)}
+                  className="
+                    shrink-0 w-32 h-40 bg-white rounded-lg shadow-sm
+                    cursor-pointer hover:shadow-md hover:-translate-y-1
+                    transition-all duration-300 border border-gray-200
+                    overflow-hidden group relative flex flex-col
+                  "
+                >
+                  {/* Category Image - Using the STABLE displayImage */}
+                  <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
+                    <img
+                      src={category.displayImage}
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.log(
+                          "Image failed to load:",
+                          category.displayImage
+                        );
+                        e.target.src = "/placeholder.jpg";
+                        e.target.className =
+                          "w-12 h-12 object-contain opacity-50";
+                      }}
+                    />
+                  </div>
+
+                  {/* Category Info */}
+                  <div className="p-3 flex-1 flex flex-col justify-center">
+                    <h3 className="text-sm font-semibold text-center line-clamp-2 text-gray-800 group-hover:text-primary transition-colors">
+                      {category.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 text-center mt-1">
+                      {category.productCount}{" "}
+                      {category.productCount === 1 ? "product" : "products"}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* For You Section - Hide when searching */}
+      {!isSearching && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold font-urbanist">Just For You</h2>
+            <button
+              onClick={refreshRecommendations}
+              className="text-primary hover:text-primary/80 text-sm flex items-center gap-2 transition-colors"
+              title="Refresh recommendations"
+            >
+              <i className="fa-solid fa-rotate"></i>
+              Refresh
+            </button>
+          </div>
+
+          {forYouProducts.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <i className="fa-solid fa-compass text-4xl text-gray-300 mb-3"></i>
+              <p className="text-gray-500 mb-2">
+                {user
+                  ? "Browse categories to see personalized recommendations"
+                  : "Sign in to get personalized recommendations"}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {user
+                  ? "Products based on your browsing history will appear here"
+                  : "Login to see products tailored to your interests"}
+              </p>
+            </div>
           ) : (
-            categories.map((category, index) => (
-              <div
-                key={index}
-                onClick={() => handleCategoryClick(category.name)}
-                className="
-                  shrink-0 w-32 h-40 bg-white rounded-lg shadow-sm
-                  cursor-pointer hover:shadow-md hover:-translate-y-1
-                  transition-all duration-300 border border-gray-200
-                  overflow-hidden group relative flex flex-col
-                "
-              >
-                {/* Category Image - Using the STABLE displayImage */}
-                <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
-                  <img
-                    src={category.displayImage}
-                    alt={category.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log(
-                        "Image failed to load:",
-                        category.displayImage
-                      );
-                      e.target.src = "/placeholder.jpg";
-                      e.target.className =
-                        "w-12 h-12 object-contain opacity-50";
-                    }}
-                  />
+            <div
+              className="
+                grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
+                justify-items-center px-4
+              "
+            >
+              {forYouProducts.map((product) => (
+                <div
+                  key={product._id}
+                  onClick={() => handleProductClick(product._id)}
+                >
+                  <DisplayCard product={product} />
                 </div>
-
-                {/* Category Info */}
-                <div className="p-3 flex-1 flex flex-col justify-center">
-                  <h3 className="text-sm font-semibold text-center line-clamp-2 text-gray-800 group-hover:text-primary transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 text-center mt-1">
-                    {category.productCount}{" "}
-                    {category.productCount === 1 ? "product" : "products"}
-                  </p>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* For You Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold font-urbanist">Just For You</h2>
-          <button
-            onClick={refreshRecommendations}
-            className="text-primary hover:text-primary/80 text-sm flex items-center gap-2 transition-colors"
-            title="Refresh recommendations"
-          >
-            <i className="fa-solid fa-rotate"></i>
-            Refresh
-          </button>
-        </div>
-
-        {forYouProducts.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <i className="fa-solid fa-compass text-4xl text-gray-300 mb-3"></i>
-            <p className="text-gray-500 mb-2">
-              {user
-                ? "Browse categories to see personalized recommendations"
-                : "Sign in to get personalized recommendations"}
-            </p>
-            <p className="text-gray-400 text-sm">
-              {user
-                ? "Products based on your browsing history will appear here"
-                : "Login to see products tailored to your interests"}
-            </p>
-          </div>
-        ) : (
-          <div
-            className="
-              grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
-              justify-items-center px-4
-            "
-          >
-            {forYouProducts.map((product) => (
-              <div
-                key={product._id}
-                onClick={() => handleProductClick(product._id)}
-              >
-                <DisplayCard product={product} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Featured Products Section */}
-      <h1 className="text-2xl font-bold my-6 font-urbanist">
-        Featured Products
-      </h1>
+      {/* Products Section - Show different title based on search state */}
+      {!isSearching ? (
+        <h1 className="text-2xl font-bold my-6 font-urbanist">
+          Featured Products
+        </h1>
+      ) : (
+        <h1 className="text-2xl font-bold my-6 font-urbanist">
+          Search Results
+        </h1>
+      )}
 
       {filteredProducts.length === 0 ? (
-        <p className="text-center p-4 text-gray-500">
-          No featured products found
-        </p>
+        isSearching ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <i className="fa-solid fa-search text-4xl text-gray-300 mb-4"></i>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              No products found for "{searchTerm}"
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Try searching with different keywords or browse our categories
+            </p>
+            <button
+              onClick={() => {
+                const searchBar = document.querySelector('input[type="text"]');
+                if (searchBar) {
+                  searchBar.focus();
+                }
+              }}
+              className="text-primary hover:text-primary/80 font-medium"
+            >
+              Try another search
+            </button>
+          </div>
+        ) : (
+          <p className="text-center p-4 text-gray-500">
+            No featured products found
+          </p>
+        )
       ) : (
         <div
           className="
