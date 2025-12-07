@@ -23,14 +23,14 @@ function Navigation() {
   };
 
   return (
-    <nav className="w-full border-b border-bordered bg-primarybg px-4 sm:px-6 py-3 font-inter">
-      <div className="flex justify-between items-center gap-3 max-w-[1400px] mx-auto">
+    <nav className="w-full border-b border-bordered bg-primarybg px-4 sm:px-6 font-inter py-3 md:py-4">
+      <div className="flex justify-between items-center gap-3 max-w-[1400px] mx-auto h-16">
         {/* Logo Section */}
         <Link to="/">
           <img
-            src="/exlogo.jpg"
+            src="/mainLogo.png"
             alt="Logo"
-            className="w-13 md:w-18 lg:w-22 rounded-full"
+            className="h-30 xs:h-35 md:h-40 lg:h-45 object-contain"
           />
         </Link>
 
