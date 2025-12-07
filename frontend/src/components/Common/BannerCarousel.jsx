@@ -113,7 +113,7 @@ function BannerCarousel() {
 
   return (
     <div
-      className="relative w-full rounded-lg overflow-hidden bg-gray-100 group"
+      className="relative w-full rounded-lg overflow-hidden group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={onTouchStart}
@@ -151,28 +151,24 @@ function BannerCarousel() {
                 <img
                   src={banner.image.url}
                   alt={banner.title || "Banner"}
-                  className="w-full h-full object-contain bg-white transition-all duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
                   onLoad={(e) => handleImageLoad(banner._id, e)}
                   style={{
                     maxWidth: "100%",
                     maxHeight: "100%",
-                    width: "auto",
-                    height: "auto",
                   }}
                 />
               </a>
             ) : (
-              <div className="w-full h-full transition-all duration-500 group-hover:scale-105 flex items-center justify-center">
+              <div className="w-full h-full transition-all duration-500 group-hover:scale-105">
                 <img
                   src={banner.image.url}
                   alt={banner.title || "Banner"}
-                  className="max-w-full max-h-full object-contain bg-white transition-all duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
                   onLoad={(e) => handleImageLoad(banner._id, e)}
                   style={{
                     maxWidth: "100%",
                     maxHeight: "100%",
-                    width: "auto",
-                    height: "auto",
                   }}
                 />
               </div>
@@ -182,7 +178,7 @@ function BannerCarousel() {
       </div>
 
       {/* Overlay gradient on hover */}
-      <div className="absolute inset-0 bg-linier-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
       {/* Navigation */}
       {banners.length > 1 && (
@@ -190,7 +186,7 @@ function BannerCarousel() {
           {/* Left Arrow */}
           <button
             onClick={prevBanner}
-            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-secondary/55 text-primarybg p-2 sm:p-3 rounded-full hover:bg-secondary/80 transition-all duration-300 z-10 opacity-0 sm:group-hover:opacity-100 hover:scale-105 hover:shadow-lg"
+            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 bg-secondary/80 text-primarybg p-2 sm:p-3 rounded-full hover:bg-secondary transition-all duration-300 z-10 opacity-0 sm:group-hover:opacity-100 hover:scale-105 hover:shadow-lg"
           >
             <i className="fa-solid fa-chevron-left text-sm sm:text-base"></i>
           </button>
@@ -198,7 +194,7 @@ function BannerCarousel() {
           {/* Right Arrow - Hidden on mobile, shown on hover for desktop */}
           <button
             onClick={nextBanner}
-            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-secondary/55 text-primarybg p-2 sm:p-3 rounded-full hover:bg-secondary/80 transition-all duration-300 z-10 opacity-0 sm:group-hover:opacity-100 hover:scale-105 hover:shadow-lg"
+            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-secondary/80 text-primarybg p-2 sm:p-3 rounded-full hover:bg-secondary transition-all duration-300 z-10 opacity-0 sm:group-hover:opacity-100 hover:scale-105 hover:shadow-lg"
           >
             <i className="fa-solid fa-chevron-right text-sm sm:text-base"></i>
           </button>
@@ -222,7 +218,7 @@ function BannerCarousel() {
 
       {/* Title */}
       {banners[currentIndex].title && (
-        <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg backdrop-blur-sm max-w-[90%] z-10 transition-all duration-300 group-hover:bg-black/80 group-hover:scale-105">
+        <div className="absolute bottom-3 sm:bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg backdrop-blur-sm max-w-[90%] z-10 transition-all duration-300 group-hover:bg-black/80 group-hover:scale-105">
           <h3 className="text-sm sm:text-lg font-semibold text-center whitespace-nowrap overflow-hidden text-ellipsis">
             {banners[currentIndex].title}
           </h3>
@@ -239,7 +235,7 @@ function BannerCarousel() {
         typeof window !== "undefined" &&
         window.innerWidth < 768 &&
         !hasInteracted && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white text-xs opacity-70 animate-pulse">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white text-xs opacity-70 animate-pulse bg-black/50 px-2 py-1 rounded">
             Swipe to navigate
           </div>
         )}
