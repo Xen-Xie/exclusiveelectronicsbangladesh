@@ -4,207 +4,162 @@ import { Link } from "react-router";
 function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const aboutLinks = [
+    { to: "/about", label: "About Us" },
+    { to: "/privacy-policy", label: "Privacy Policy" },
+    { to: "/cookie-policy", label: "Cookie Policy" },
+    { to: "/terms-and-conditions", label: "Terms & Conditions" },
+    { to: "/why-shop-with-us", label: "Why Shop With Us" },
+    { to: "/blog", label: "Exclusive Electronics Blog" },
+    { to: "/careers", label: "Exclusive Electronics Career" },
+  ];
+
+  const helpLinks = [
+    { to: "/payment", label: "Payment" },
+    { to: "/shipping", label: "Shipping" },
+    { to: "/return-policy", label: "Return And Replacement" },
+    { to: "/contact", label: "Chat With Us" },
+    { to: "/support", label: "Exclusive Electronics Support" },
+  ];
+
+  const socialLinks = [
+    {
+      href: "https://www.facebook.com/share/1D2DZG9Efg/",
+      icon: "fa-brands fa-facebook-f",
+      label: "Facebook",
+      color: "hover:bg-blue-600",
+    },
+    {
+      href: "https://www.instagram.com/md.rakibulhasanhemel/",
+      icon: "fa-brands fa-instagram",
+      label: "Instagram",
+      color: "hover:bg-pink-600",
+    },
+    {
+      href: "https://github.com/Xen-Xie",
+      icon: "fa-brands fa-github",
+      label: "GitHub",
+      color: "hover:bg-gray-600",
+    },
+    {
+      href: "mailto:rh189827@gmail.com",
+      icon: "fa-solid fa-envelope",
+      label: "Email",
+      color: "hover:bg-red-500",
+    },
+  ];
+
   return (
-    <>
-      <footer className="bg-gray-900 text-white py-12 font-inter">
-        <div className="max-w-6xl mx-auto px-4">
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            {/* Company Info */}
-            <div className="lg:col-span-2">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Exclusive Electronics BD
-              </h2>
-              <div className="space-y-2 text-gray-300">
-                <p className="flex items-start">
-                  <i className="fa-solid fa-location-dot mt-1 mr-3 text-primary"></i>
-                  <span>
-                    9 KA/KHA, Level 5, Tejgaon Industrial Area, Tejgaon, Dhaka
-                    -1215
-                  </span>
-                </p>
-                <p className="flex items-center">
-                  <i className="fa-solid fa-phone mr-3 text-primary"></i>
-                  <span>+8809666745745</span>
-                </p>
-                <p className="flex items-center">
-                  <i className="fa-solid fa-envelope mr-3 text-primary"></i>
-                  <span>support@exclusiveelectronicsbd.com</span>
-                </p>
-              </div>
+    <footer className="bg-gray-900 text-white py-12 font-inter">
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+          {/* Company Info - Full width on mobile, centered */}
+          <div className="lg:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
+            {/* Centered Logo on Mobile */}
+            <div className="w-full flex justify-center mb-6 md:justify-start md:mb-4">
+              <img
+                src="Logo-04.png"
+                alt="Exclusive Electronics Bangladesh"
+                className="h-28 xs:h-32 md:h-36 lg:h-40 w-auto"
+              />
+            </div>
 
-              {/* Social Media Links */}
-              <div className="flex space-x-4 mt-6">
-                <a
-                  href="https://www.facebook.com/share/1D2DZG9Efg/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gray-700 hover:bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center transition duration-300"
-                >
-                  <i className="fa-brands fa-facebook-f"></i>
-                </a>
-                <a
-                  href="https://www.instagram.com/md.rakibulhasanhemel/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gray-700 hover:bg-pink-600 w-10 h-10 rounded-full flex items-center justify-center transition duration-300"
-                >
-                  <i className="fa-brands fa-instagram"></i>
-                </a>
-                <a
-                  href="https://github.com/Xen-Xie"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gray-700 hover:bg-gray-600 w-10 h-10 rounded-full flex items-center justify-center transition duration-300"
-                >
-                  <i className="fa-brands fa-github"></i>
-                </a>
-                <a
-                  href="mailto:rh189827@gmail.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gray-700 hover:bg-red-500 w-10 h-10 rounded-full flex items-center justify-center transition duration-300"
-                >
-                  <i className="fa-solid fa-envelope"></i>
-                </a>
+            <div className="space-y-3 text-gray-300 max-w-md">
+              <div className="flex items-start gap-3">
+                <i className="fa-solid fa-location-dot text-primary text-lg mt-1 shrink-0"></i>
+                <span className="text-sm md:text-base">
+                  9 KA/KHA, Level 5, Tejgaon Industrial Area, Tejgaon, Dhaka -
+                  1215
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <i className="fa-solid fa-phone text-primary text-lg shrink-0"></i>
+                <span className="text-sm md:text-base">+8809666745745</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <i className="fa-solid fa-envelope text-primary text-lg shrink-0"></i>
+                <span className="text-sm md:text-base">
+                  support@exclusiveelectronicsbd.com
+                </span>
               </div>
             </div>
 
-            {/* About Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-white">About</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li>
-                  <Link
-                    to="/about"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/privacy-policy"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/cookie-policy"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Cookie Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/terms-and-conditions"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Terms & Conditions
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/why-shop-with-us"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Why Shop With Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/blog"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Exclusive Electronics Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/careers"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Exclusive Electronics Career
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Help Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-white">Help</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li>
-                  <Link
-                    to="/payment"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Payment
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/shipping"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Shipping
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/return-policy"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Return And Replacement
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/contact"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Chat With Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/support"
-                    className="hover:text-primary transition duration-200"
-                  >
-                    Exclusive Electronics Support
-                  </Link>
-                </li>
-              </ul>
+            {/* Social Media Links - Centered on Mobile */}
+            <div className="flex justify-center md:justify-start gap-4 mt-6">
+              {socialLinks.map((social, index) => (
+                <a
+                  key={index}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`bg-gray-700 w-10 h-10 rounded-full flex items-center justify-center transition duration-300 ${social.color}`}
+                  aria-label={social.label}
+                >
+                  <i className={`${social.icon} text-white`}></i>
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-primarybg/50 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-center md:text-left mb-4 md:mb-0">
-                <p className="text-gray-400 text-sm">
-                  Copyright © {currentYear}{" "}
-                  <span className="text-primary font-medium">
-                    Exclusive Electronics BD
-                  </span>
-                  . All rights reserved.
-                </p>
-              </div>
+          {/* About Section */}
+          <div className="text-center md:text-left">
+            <h3 className="text-lg font-semibold mb-4 text-white">About</h3>
+            <ul className="space-y-2 text-gray-300">
+              {aboutLinks.map((item, index) => (
+                <li key={index}>
+                  <Link
+                    to={item.to}
+                    className="hover:text-primary transition duration-200 block text-sm md:text-base py-1"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-              <div className="text-center md:text-right">
-                <p className="text-gray-400 text-sm">
-                  Developed by{" "}
-                  <span className="text-primary font-medium">Xen Xie Team</span>
-                </p>
-              </div>
+          {/* Help Section */}
+          <div className="text-center md:text-left">
+            <h3 className="text-lg font-semibold mb-4 text-white">Help</h3>
+            <ul className="space-y-2 text-gray-300">
+              {helpLinks.map((item, index) => (
+                <li key={index}>
+                  <Link
+                    to={item.to}
+                    className="hover:text-primary transition duration-200 block text-sm md:text-base py-1"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Divider & Copyright */}
+        <div className="border-t border-gray-700 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-center md:text-left">
+              <p className="text-gray-400 text-sm">
+                Copyright © {currentYear}{" "}
+                <span className="text-primary font-medium">
+                  Exclusive Electronics BD
+                </span>
+                . All rights reserved.
+              </p>
+            </div>
+
+            <div className="text-center md:text-right">
+              <p className="text-gray-400 text-sm">
+                Developed by{" "}
+                <span className="text-primary font-medium">Xen Xie Team</span>
+              </p>
             </div>
           </div>
         </div>
-      </footer>
-    </>
+      </div>
+    </footer>
   );
 }
 
