@@ -1,77 +1,176 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import axios from "axios";
 import { useAuth } from "../../src/auth/useAuth";
-import Btn from "../components/Common/Btn";
 import { useCart } from "../context/useCart";
+import DisplayCard from "../components/Common/DisplayCard";
+import { AuthContext } from "../auth/AuthContext";
+
+import ProductGallery from "./ProductDetails/ProductGallery";
+import ProductInfo from "./ProductDetails/ProductInfo";
+import ProductTabsContent from "./ProductDetails/ProductTabsContent";
+import ProductActions from "./ProductDetails/ProductActions";
+import RecentlyViewedProducts from "./ProductDetails/RecentlyViewedProducts";
+import LoadingSkeleton from "./ProductDetails/LoadingSkeleton";
+import ErrorState from "./ProductDetails/ErrorState";
 
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth() || {};
+  const { token } = useContext(AuthContext) || {};
   const apiUrl = import.meta.env.VITE_API_URL;
+  const { cart, addToCart } = useCart();
 
+  // State
   const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
 
-  useEffect(() => {
-    const fetchProduct = async () => {
+  // Review states
+  const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState(null);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [canReview, setCanReview] = useState(null);
+  const [userReview, setUserReview] = useState(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Review form states
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewImages, setReviewImages] = useState([]);
+
+  // Helper functions
+  const getDefaultReviewSummary = useCallback(
+    () => ({
+      averageRating: 0,
+      totalReviews: 0,
+      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    }),
+    []
+  );
+
+  const fetchProductData = useCallback(async () => {
+    const res = await axios.get(`${apiUrl}/api/products/${id}`);
+    return res.data.data || res.data;
+  }, [apiUrl, id]);
+
+  const fetchProductReviews = useCallback(
+    async (productId) => {
       try {
-        setLoading(true);
-        const res = await axios.get(`${apiUrl}/api/products/${id}`);
-        setProduct(res.data.data);
+        setLoadingReviews(true);
+        const res = await axios.get(
+          `${apiUrl}/api/reviews/product/${productId}`
+        );
+        setReviews(res.data.reviews || []);
+        setReviewSummary(res.data.summary || getDefaultReviewSummary());
       } catch (err) {
-        console.error("Failed to fetch product:", err);
-        setError("Product not found");
+        console.error("Failed to fetch reviews:", err);
       } finally {
-        setLoading(false);
+        setLoadingReviews(false);
       }
-    };
-    if (id) fetchProduct();
-  }, [id, apiUrl]);
+    },
+    [apiUrl, getDefaultReviewSummary]
+  );
 
-  const { cart, addToCart } = useCart();
+  const fetchRelatedProducts = useCallback(
+    async (productData) => {
+      if (!productData.category) return;
+
+      try {
+        const res = await axios.get(
+          `${apiUrl}/api/products/category/${productData.category}`
+        );
+        const allProducts = res.data.data || [];
+        const filtered = allProducts.filter((p) => p._id !== id).slice(0, 4);
+        setRelatedProducts(filtered);
+      } catch (err) {
+        console.error("Failed to fetch related products:", err);
+      }
+    },
+    [apiUrl, id]
+  );
+
+  const fetchProduct = useCallback(async () => {
+    try {
+      setLoading(true);
+      const productData = await fetchProductData();
+      if (!productData) return;
+
+      setProduct(productData);
+      fetchProductReviews(productData._id);
+      fetchRelatedProducts(productData);
+    } catch (err) {
+      setError(err.message || "Failed to load product");
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProductData, fetchProductReviews, fetchRelatedProducts]);
+
+  const checkCanReview = useCallback(async () => {
+    if (!user || !token || !product?._id) return;
+
+    try {
+      const res = await axios.get(
+        `${apiUrl}/api/reviews/can-review/${product._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCanReview(res.data);
+      if (res.data.hasReviewed && res.data.existingReview) {
+        setUserReview(res.data.existingReview);
+        setReviewRating(res.data.existingReview.rating);
+        setReviewComment(res.data.existingReview.comment);
+      }
+    } catch (err) {
+      console.error("Failed to check review eligibility:", err);
+    }
+  }, [user, token, product?._id, apiUrl]);
+
+  // Fetch product
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
+
+  // Check review eligibility
+  useEffect(() => {
+    if (product && product._id) {
+      checkCanReview();
+    }
+  }, [product, user, token, checkCanReview]);
 
   const handleAddToCart = async () => {
     if (!product) return;
 
     try {
       setAddingToCart(true);
-
-      // Find if product is already in cart
       const existingInCart = cart.find((item) => item._id === product._id);
       const existingQty = existingInCart ? existingInCart.quantity : 0;
-
-      // Total quantity after adding
       const totalQty = existingQty + quantity;
 
-      if (totalQty > product.stock) {
-        alert(`You can only add ${product.stock} ${product.name} in total`);
+      if (totalQty > (product.stock || 0)) {
+        alert(
+          `You can only add ${product.stock || 0} ${product.name} in total`
+        );
         return;
       }
 
-      // Add to cart
       addToCart({
         ...product,
         quantity,
-        selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
+        selectedImage: product.images?.[0]?.url || "/placeholder.jpg",
         salePrice:
           product.onSale && product.salePrice ? product.salePrice : null,
       });
 
-      // Update local product state to reflect real-time stock
-      setProduct((prev) =>
-        prev
-          ? {
-              ...prev,
-              stock: prev.stock, // Stock will be decremented when order is paid
-            }
-          : null
-      );
+      // Show success feedback
+      const event = new CustomEvent("cart:add", { detail: product });
+      window.dispatchEvent(event);
     } catch (err) {
       console.error("Error adding to cart:", err);
       alert("Failed to add product to cart");
@@ -80,7 +179,6 @@ function ProductDetails() {
     }
   };
 
-  // Buy Now Function
   const handleBuyNow = async () => {
     if (!product) return;
     if (!user) {
@@ -90,18 +188,13 @@ function ProductDetails() {
 
     try {
       setAddingToCart(true);
-
-      // Add product to cart first
       addToCart({
         ...product,
-        quantity: Math.min(quantity, product.stock),
-        stock: product.stock,
-        selectedImageIndex: product.images?.[0]?.url || "/placeholder.jpg",
+        quantity: Math.min(quantity, product.stock || 0),
+        selectedImage: product.images?.[0]?.url || "/placeholder.jpg",
         salePrice:
           product.onSale && product.salePrice ? product.salePrice : null,
       });
-
-      // Navigate to checkout
       navigate("/checkout");
     } catch (err) {
       console.error("Error in buy now:", err);
@@ -111,254 +204,279 @@ function ProductDetails() {
     }
   };
 
-  const handleQuantityChange = (change) => {
-    const newQuantity = quantity + change;
-    if (newQuantity >= 1 && newQuantity <= (product?.stock || 1)) {
-      setQuantity(newQuantity);
+  const handleSubmitReview = async () => {
+    if (!reviewComment.trim() || reviewComment.trim().length < 10) {
+      alert("Please write a review of at least 10 characters");
+      return;
+    }
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (!product || !product._id) {
+      alert("Product information is missing");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const formData = new FormData();
+      formData.append("rating", reviewRating);
+      formData.append("comment", reviewComment);
+
+      reviewImages.forEach((file) => {
+        formData.append("reviewImages", file);
+      });
+
+      const res = await axios.post(
+        `${apiUrl}/api/reviews/product/${product._id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (res.data.success) {
+        alert(res.data.message);
+        setShowReviewForm(false);
+        setReviewComment("");
+        setReviewImages([]);
+        fetchProductReviews(product._id);
+        checkCanReview();
+      }
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+      alert(err.response?.data?.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
-  if (loading)
-    return (
-      <div className="max-w-6xl mx-auto p-4">
-        <div className="animate-pulse grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <div className="bg-gray-300 h-112 rounded-lg"></div>
-            <div className="flex gap-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-gray-300 h-20 w-20 rounded-lg"></div>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="bg-gray-300 h-8 rounded w-3/4"></div>
-            <div className="bg-gray-300 h-6 rounded w-1/2"></div>
-            <div className="bg-gray-300 h-4 rounded w-full"></div>
-            <div className="bg-gray-300 h-4 rounded w-full"></div>
-            <div className="bg-gray-300 h-4 rounded w-2/3"></div>
-            <div className="bg-gray-300 h-12 rounded w-1/3"></div>
-          </div>
-        </div>
-      </div>
-    );
+  const handleReviewImageUpload = (e) => {
+    const files = Array.from(e.target.files).slice(0, 5);
+    setReviewImages(files);
+  };
 
+  const shareProduct = () => {
+    if (!product) return;
+
+    const url = window.location.href;
+    const price =
+      product.onSale && product.salePrice ? product.salePrice : product.price;
+    const text = `Check out ${product.name} - ৳${price || "0"}`;
+
+    if (navigator.share) {
+      navigator.share({ title: product.name, text, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      alert("Link copied to clipboard!");
+    }
+  };
+
+  const getAvailableStock = () => {
+    if (!product) return 0;
+    const cartItem = cart.find((item) => item._id === product._id);
+    const reservedInCart = cartItem ? cartItem.quantity : 0;
+    return Math.max(0, (product.stock || 0) - reservedInCart);
+  };
+
+  // Loading and error states
+  if (loading) return <LoadingSkeleton />;
   if (error || !product)
-    return (
-      <div className="max-w-6xl mx-auto p-4 text-center">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">
-          {error || "Product not found"}
-        </h2>
-        <button
-          onClick={() => navigate("/")}
-          className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition"
-        >
-          Back to Home
-        </button>
-      </div>
-    );
+    return <ErrorState error={error} navigate={navigate} />;
 
-  const images = product.images || [];
-  const mainImage = images[selectedImageIndex]?.url || "/placeholder.jpg";
-
-  // Calculate available stock considering cart items
+  const availableStock = getAvailableStock();
   const cartItem = cart.find((item) => item._id === product._id);
   const reservedInCart = cartItem ? cartItem.quantity : 0;
-  const availableStock = Math.max(0, product.stock - reservedInCart);
 
   return (
-    <div className="max-w-7xl mx-auto p-6 font-urbanist">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 font-urbanist">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500 mb-6 flex flex-wrap gap-2">
-        <button onClick={() => navigate("/")} className="hover:text-primary">
-          Home
-        </button>
-        <span>/</span>
-        <span className="text-gray-700">{product.category}</span>
-        <span>/</span>
-        <span className="text-secondary font-medium">{product.name}</span>
-      </nav>
+      <Breadcrumb product={product} navigate={navigate} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* IMAGE GALLERY */}
-        <div className="space-y-4">
-          {/* Main Image */}
-          <div className="rounded-xl overflow-hidden shadow-lg bg-white flex items-center justify-center">
-            <img
-              src={mainImage}
-              alt={product.name}
-              className="w-full max-h-112 object-contain transition-transform duration-300 hover:scale-105"
-            />
-          </div>
-
-          {/* Thumbnails */}
-          {images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`shrink-0 w-20 h-20 rounded-lg border-2 overflow-hidden transition-all duration-300 ${
-                    selectedImageIndex === idx
-                      ? "border-primary scale-105"
-                      : "border-gray-300"
-                  }`}
-                >
-                  <img
-                    src={img.url || img}
-                    alt={`${product.name} ${idx + 1}`}
-                    className="w-full h-full object-cover hover:opacity-80 transition"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        {/* Left Column - Gallery */}
+        <div className="lg:col-span-2">
+          <ProductGallery
+            product={product}
+            selectedImageIndex={selectedImageIndex}
+            setSelectedImageIndex={setSelectedImageIndex}
+            shareProduct={shareProduct}
+            navigate={navigate}
+          />
         </div>
 
-        {/* PRODUCT DETAILS */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-4xl font-bold text-secondary mb-1">
-              {product.name}
-            </h1>
-            <p className="text-secondary/45 mb-4 text-sm">{product.category}</p>
+        {/* Right Column - Product Info & Actions */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 space-y-6">
+            {/* Product Basic Info */}
+            <ProductInfo
+              product={product}
+              reviewSummary={reviewSummary}
+              availableStock={availableStock}
+              reservedInCart={reservedInCart}
+            />
 
-            {/* Price */}
-            <div className="flex items-baseline gap-3 mb-4">
-              {product.onSale && product.salePrice ? (
-                <>
-                  <span className="text-3xl font-bold text-danger">
-                    ৳{product.salePrice}
-                  </span>
-                  <span className="text-lg line-through text-secondary/85">
-                    ৳{product.price}
-                  </span>
-                  <span className="bg-danger text-primarybg text-xs font-bold px-2 py-1 rounded">
-                    Save ৳{product.price - product.salePrice}
-                  </span>
-                </>
-              ) : (
-                <span className="text-3xl font-bold text-secondary">
-                  ৳{product.price}
-                </span>
-              )}
-            </div>
-
-            {/* Stock Information */}
-            <div className="mb-4 space-y-1">
-              {product.stock > 0 ? (
-                <>
-                  <span className="text-success font-medium">
-                    In Stock ({availableStock} available)
-                  </span>
-                  {reservedInCart > 0 && (
-                    <p className="text-xs text-warning">
-                      {reservedInCart} item(s) in your cart
-                    </p>
-                  )}
-                </>
-              ) : (
-                <span className="text-danger font-medium">Out of Stock</span>
-              )}
-            </div>
+            {/* Product Actions */}
+            <ProductActions
+              product={product}
+              quantity={quantity}
+              setQuantity={setQuantity}
+              availableStock={availableStock}
+              handleAddToCart={handleAddToCart}
+              handleBuyNow={handleBuyNow}
+              addingToCart={addingToCart}
+            />
           </div>
+        </div>
 
-          {/* Description */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-secondary/55 leading-relaxed">
-              {product.description || "No description available."}
-            </p>
-          </div>
+        {/* Full Width Content Below - Tabs */}
+        <div className="lg:col-span-3">
+          <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-          {/* SKU & Tags */}
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-            {product.sku && (
-              <div>
-                <span className="font-semibold">SKU:</span> {product.sku}
-              </div>
-            )}
-            {product.tags?.length > 0 && (
-              <div>
-                <span className="font-semibold">Tags:</span>{" "}
-                {product.tags.join(", ")}
-              </div>
-            )}
-          </div>
-
-          {/* Quantity Selector */}
-          <div className="flex items-center gap-4">
-            <span className="font-semibold">Quantity:</span>
-            <div className="flex items-center border rounded-lg overflow-hidden">
-              <button
-                onClick={() => handleQuantityChange(-1)}
-                disabled={quantity <= 1}
-                className="px-3 py-2 text-gray-600 disabled:text-gray-300 hover:bg-gray-100 transition"
-              >
-                -
-              </button>
-              <span className="px-4 py-2 border-x">{quantity}</span>
-              <button
-                onClick={() => handleQuantityChange(1)}
-                disabled={quantity >= availableStock}
-                className="px-3 py-2 text-gray-600 disabled:text-gray-300 hover:bg-gray-100 transition"
-              >
-                +
-              </button>
-            </div>
-            <span className="text-sm text-info font-inter">
-              Max: {availableStock}
-            </span>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Btn
-              variant="outline"
-              onClick={handleAddToCart}
-              disabled={
-                product.stock === 0 || availableStock === 0 || addingToCart
-              }
-              className="flex-1 py-3 px-6 rounded-xl hover:bg-primary-dark disabled:bg-secondary/25 transition font-semibold flex items-center justify-center gap-2"
-            >
-              {addingToCart ? (
-                <>
-                  <i className="fa-solid fa-spinner fa-spin"></i> Adding...
-                </>
-              ) : (
-                <>
-                  <i className="fa-solid fa-cart-plus"></i> Add to Cart
-                </>
-              )}
-            </Btn>
-
-            <Btn
-              variant="success"
-              onClick={handleBuyNow}
-              disabled={
-                product.stock === 0 || availableStock === 0 || addingToCart
-              }
-              className="flex-1 bg-success text-white py-3 px-6 rounded-xl hover:bg-success-dark disabled:bg-gray-300 transition font-semibold flex items-center justify-center gap-2"
-            >
-              {addingToCart ? (
-                <>
-                  <i className="fa-solid fa-spinner fa-spin"></i> Processing...
-                </>
-              ) : (
-                <>
-                  <i className="fa-solid fa-bolt"></i> Buy Now
-                </>
-              )}
-            </Btn>
+          <div className="mt-6">
+            <ProductTabsContent
+              activeTab={activeTab}
+              product={product}
+              availableStock={availableStock}
+              reviews={reviews}
+              reviewSummary={reviewSummary}
+              loadingReviews={loadingReviews}
+              user={user}
+              canReview={canReview}
+              userReview={userReview}
+              showReviewForm={showReviewForm}
+              setShowReviewForm={setShowReviewForm}
+              navigate={navigate}
+              handleSubmitReview={handleSubmitReview}
+              reviewRating={reviewRating}
+              setReviewRating={setReviewRating}
+              reviewComment={reviewComment}
+              setReviewComment={setReviewComment}
+              reviewImages={reviewImages}
+              handleReviewImageUpload={handleReviewImageUpload}
+              submittingReview={submittingReview}
+              setReviewImages={setReviewImages}
+            />
           </div>
         </div>
       </div>
 
-      {/* Related */}
-      <div className="border-t pt-8 mt-12">
-        <h3 className="text-2xl font-bold mb-6">You May Also Like</h3>
-        <div className="text-center text-gray-500">
-          <p>Related products will be displayed here</p>
+      {/* Related Products */}
+      {relatedProducts.length > 0 && (
+        <RelatedProducts
+          relatedProducts={relatedProducts}
+          product={product}
+          navigate={navigate}
+        />
+      )}
+
+      {/* Recently Viewed Products */}
+      {user && token && (
+        <RecentlyViewedProducts userId={user._id} token={token} />
+      )}
+    </div>
+  );
+}
+
+// Small helper components
+function Breadcrumb({ product, navigate }) {
+  return (
+    <nav className="flex items-center text-sm text-gray-600 mb-8">
+      <button
+        onClick={() => navigate("/")}
+        className="hover:text-primary transition-colors flex items-center gap-1"
+      >
+        <i className="fa-solid fa-home text-xs"></i> Home
+      </button>
+      <i className="fa-solid fa-chevron-right text-xs mx-2 text-gray-400"></i>
+      <button
+        onClick={() =>
+          navigate(
+            `/category/${(product.category || "")
+              .toLowerCase()
+              .replace(/\s+/g, "-")}`
+          )
+        }
+        className="hover:text-primary transition-colors"
+      >
+        {product.category || "Uncategorized"}
+      </button>
+      <i className="fa-solid fa-chevron-right text-xs mx-2 text-gray-400"></i>
+      <span className="text-primary font-medium truncate max-w-[200px]">
+        {product.name}
+      </span>
+    </nav>
+  );
+}
+
+function TabsNavigation({ activeTab, setActiveTab }) {
+  const tabs = [
+    { id: "description", label: "Description", icon: "file-alt" },
+    { id: "specs", label: "Specifications", icon: "list-check" },
+    { id: "reviews", label: "Reviews", icon: "star" },
+  ];
+
+  return (
+    <div className="border-b border-gray-200">
+      <div className="flex gap-6">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`pb-3 font-medium transition-colors ${
+              activeTab === tab.id
+                ? "text-primary border-b-2 border-primary"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <i className={`fa-solid fa-${tab.icon} mr-2`}></i>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RelatedProducts({ relatedProducts, product, navigate }) {
+  return (
+    <div className="mt-16 pt-8 border-t">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900">Related Products</h3>
+          <p className="text-gray-600 mt-1">
+            Other products you might like in {product.category}
+          </p>
         </div>
+        <button
+          onClick={() =>
+            navigate(
+              `/category/${(product.category || "")
+                .toLowerCase()
+                .replace(/\s+/g, "-")}`
+            )
+          }
+          className="px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+        >
+          View All <i className="fa-solid fa-arrow-right ml-2"></i>
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {relatedProducts.map((relatedProduct) => (
+          <DisplayCard
+            key={relatedProduct._id}
+            product={relatedProduct}
+            onClick={() =>
+              navigate(`/products/${relatedProduct._id}/${relatedProduct.slug}`)
+            }
+          />
+        ))}
       </div>
     </div>
   );
