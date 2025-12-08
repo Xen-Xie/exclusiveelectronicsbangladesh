@@ -4,10 +4,11 @@ import cors from "cors";
 import { DB } from "./src/config/db.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import productRoutes from "./src/routes/productRoutes.js";
-import orderRoutes from "./src/routes/orderRoutes.js"
-import paymentRoutes from "./src/routes/paymentRoutes.js"
+import orderRoutes from "./src/routes/orderRoutes.js";
+import paymentRoutes from "./src/routes/paymentRoutes.js";
 import behaviorRoutes from "./src/routes/behaviourRoutes.js";
 import bannerRoutes from "./src/routes/bannerRoutes.js";
+import reviewRoutes from "./src/routes/reviewRoutes.js";
 
 const app = express();
 dotenv.config();
@@ -22,16 +23,17 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.urlencoded({extended: true}))
+app.use(express.urlencoded({ extended: true }));
 
 const url = process.env.MONGO_URL;
 DB(url);
 app.use("/api/user", userRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/order",orderRoutes)
-app.use("/api/payment",paymentRoutes)
+app.use("/api/order", orderRoutes);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/behavior", behaviorRoutes);
 app.use("/api/banners", bannerRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 const port = process.env.PORT || 5000;
 
