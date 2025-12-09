@@ -59,7 +59,7 @@ function Footer() {
             {/* Centered Logo on Mobile */}
             <div className="w-full flex justify-center mb-6 md:justify-start md:mb-4">
               <img
-                src="Logo-04.png"
+                src="/footerlogo.png"
                 alt="Exclusive Electronics Bangladesh"
                 className="h-28 xs:h-32 md:h-36 lg:h-40 w-auto"
               />
