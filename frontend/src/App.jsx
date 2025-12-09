@@ -1,4 +1,6 @@
 import "./App.css";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { Route, Routes } from "react-router";
 import Layout from "./utils/layout";
 import Home from "./pages/Home";
@@ -30,6 +32,7 @@ import ErrorPage from "./pages/ErrorPage";
 function App() {
   return (
     <>
+    <ToastContainer />
       <Routes>
         {/* User routes */}
         <Route path="/" element={<Layout />}>

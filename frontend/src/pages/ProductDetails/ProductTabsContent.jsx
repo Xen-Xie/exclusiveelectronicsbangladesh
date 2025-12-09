@@ -34,6 +34,7 @@ function ProductTabsContent({
   submittingReview,
   setReviewImages,
   token = null,
+  reviewSectionRef,
 }) {
   // Get authentication context for user and token if not provided as props
   const authContext = useContext(AuthContext);
@@ -77,6 +78,7 @@ function ProductTabsContent({
         submittingReview={submittingReview}
         setReviewImages={setReviewImages}
         token={actualToken}
+        reviewSectionRef={reviewSectionRef}
       />
     );
   }
@@ -180,9 +182,10 @@ function ReviewsTab({
   submittingReview,
   setReviewImages,
   token,
+  reviewSectionRef,
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={reviewSectionRef}>
       {reviewSummary && <ReviewSummary reviewSummary={reviewSummary} />}
 
       <ReviewHeader

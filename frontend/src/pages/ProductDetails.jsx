@@ -1,5 +1,11 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useRef,
+} from "react";
+import { useParams, useNavigate, useLocation } from "react-router";
 import axios from "axios";
 import { useAuth } from "../../src/auth/useAuth";
 import { useCart } from "../context/useCart";
@@ -21,6 +27,7 @@ function ProductDetails() {
   const { token } = useContext(AuthContext) || {};
   const apiUrl = import.meta.env.VITE_API_URL;
   const { cart, addToCart } = useCart();
+  const location = useLocation();
 
   // State
   const [product, setProduct] = useState(null);
@@ -40,12 +47,50 @@ function ProductDetails() {
   const [userReview, setUserReview] = useState(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const reviewSectionRef = useRef(null);
 
   // Review form states
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewImages, setReviewImages] = useState([]);
+  // Parse query parameter for tab on component mount and when location changes
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const tabParam = queryParams.get("tab");
 
+    // Set active tab based on URL parameter if valid
+    if (tabParam && ["description", "specs", "reviews"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
+  // Automatically jump into review form when reviews tab is active and user can review
+  useEffect(() => {
+    if (activeTab === "reviews" && canReview?.canReview && !userReview) {
+      setShowReviewForm(true);
+    }
+  }, [activeTab, canReview, userReview]);
+  // Parse query parameter for tab on component mount and when location changes
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const tabParam = queryParams.get("tab");
+
+    // Set active tab based on URL parameter if valid
+    if (tabParam && ["description", "specs", "reviews"].includes(tabParam)) {
+      setActiveTab(tabParam);
+
+      // If reviews tab, scroll to it after a short delay
+      if (tabParam === "reviews") {
+        setTimeout(() => {
+          if (reviewSectionRef.current) {
+            reviewSectionRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        }, 400);
+      }
+    }
+  }, [location.search]);
   // Helper functions
   const getDefaultReviewSummary = useCallback(
     () => ({
@@ -362,6 +407,7 @@ function ProductDetails() {
               handleReviewImageUpload={handleReviewImageUpload}
               submittingReview={submittingReview}
               setReviewImages={setReviewImages}
+              reviewSectionRef={reviewSectionRef}
             />
           </div>
         </div>
