@@ -311,10 +311,6 @@ function Home() {
                     <h3 className="text-sm font-semibold text-center line-clamp-2 text-gray-800 group-hover:text-primary transition-colors">
                       {category.name}
                     </h3>
-                    <p className="text-xs text-gray-500 text-center mt-1">
-                      {category.productCount}{" "}
-                      {category.productCount === 1 ? "product" : "products"}
-                    </p>
                   </div>
                 </div>
               ))
