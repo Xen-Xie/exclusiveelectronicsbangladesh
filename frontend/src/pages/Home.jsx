@@ -5,6 +5,7 @@ import SearchBar from "../components/Common/SearchBar";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../auth/AuthContext";
 import BannerCarousel from "../components/Common/BannerCarousel";
+import TopRated from "../components/TopRated";
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -424,6 +425,7 @@ function Home() {
           ))}
         </div>
       )}
+      {!isSearching && <TopRated limit={10} />}
     </div>
   );
 }
