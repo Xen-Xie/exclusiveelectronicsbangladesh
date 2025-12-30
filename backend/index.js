@@ -13,17 +13,19 @@ import reviewRoutes from "./src/routes/reviewRoutes.js";
 const app = express();
 dotenv.config();
 
-app.use(express.json());
+
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "https://exclusiveelectronicbangladesh.netlify.app",
-      "https://exclusivebd.org"
+      "https://exclusivebd.org",
     ],
     credentials: true,
   })
 );
+
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const url = process.env.MONGO_URL;
