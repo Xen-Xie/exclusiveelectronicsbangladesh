@@ -20,7 +20,7 @@ const isOwnerOrAdmin = (order, user) =>
 // Create Order
 export const createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress = {}, shippingFee = 0 } = req.body;
+    const { items, shippingAddress = {}, shippingFee = 0, payment = {} } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res
@@ -75,6 +75,16 @@ export const createOrder = async (req, res) => {
 
     const total = subtotal + Number(shippingFee || 0);
 
+    // Handle COD status properly
+    let paymentStatus = "pending";
+    let paymentMethod = "manual";
+
+    // Check if frontend sent COD payment method
+    if (payment.method === "cod") {
+      paymentStatus = "cash_on_delivery";
+      paymentMethod = "cod";
+    }
+
     const order = await Order.create({
       user: req.user._id,
       items: finalItems,
@@ -83,12 +93,23 @@ export const createOrder = async (req, res) => {
       shippingFee: Number(shippingFee || 0),
       total,
       status: "created",
-      payment: { method: "manual", status: "pending" },
+      payment: {
+        method: paymentMethod,
+        status: paymentStatus,
+        ...(payment.method === "cod" && {
+          transactionId: `COD-${Date.now()}`,
+        }),
+      },
     });
 
-    return res
-      .status(201)
-      .json({ status: "success", message: "Order created", data: order });
+    return res.status(201).json({
+      status: "success",
+      message:
+        payment.method === "cod"
+          ? "COD order created successfully"
+          : "Order created",
+      data: order,
+    });
   } catch (error) {
     console.error("Create Order Error:", error);
     return res
