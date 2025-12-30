@@ -64,7 +64,7 @@ function CheckOut() {
       // For new orders, load user data as before
       const loadUserData = async () => {
         try {
-          const res = await axios.get(`${apiUrl}/api/user/${user._id}`, {
+          const res = await axios.get(`${apiUrl}/api/user/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           const u = res.data.data || res.data;
@@ -126,7 +126,10 @@ function CheckOut() {
           subtotal,
           shippingFee: shipping,
           total,
-          payment: { method: paymentMethod, status: "pending" },
+          payment: {
+            method: paymentMethod, // Send the selected method
+            status: "pending",
+          },
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -204,7 +207,7 @@ function CheckOut() {
               <div className="flex-1 w-full">
                 <h3 className="font-medium">{item.name}</h3>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className="px-2.5 py-0.5 border rounded-xl bg-secondary/10 text-[#0A0A0A]">
+                  <span className="px-2.5 py-0.5 border rounded-xl bg-secondary/10 text-classic">
                     Qty: {item.qty}
                   </span>
                 </div>
@@ -359,7 +362,7 @@ function CheckOut() {
               variant="primary"
               onClick={createOrder}
               disabled={cart.length === 0}
-              className="w-full bg-[#0A0A0A] text-primarybg py-3 rounded-lg mt-4 disabled:secondary/50"
+              className="w-full bg-classic text-primarybg py-3 rounded-lg mt-4 disabled:secondary/50"
             >
               Create Order
             </Btn>
