@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useState, useContext } from "react";
 import Btn from "../components/Common/Btn";
 import { Link } from "react-router";
@@ -87,6 +86,12 @@ function SignUp() {
     e.preventDefault();
     setFormLoading(true);
 
+    // Clear previous errors
+    setEmailError("");
+    setPassError("");
+    setConfirmError("");
+    setTermsError("");
+
     let valid = true;
 
     if (!email) {
@@ -115,20 +120,54 @@ function SignUp() {
     }
 
     try {
+      console.log("ending signup request:", { name, email, agreeToTerms });
+
       const res = await axios.post(`${apiUrl}/api/user/signup`, {
         name,
         email,
         password,
-        agreeToTerms,
+        agreeToTerms: agreeToTerms || true,
+        phoneNumber: "", // Add required empty fields
+        address: "",
       });
+
+      console.log("Signup successful:", res.data);
 
       toast.success("Account created successfully! Please login.");
       navigate("/login");
     } catch (error) {
-      console.error("Signup error:", error);
-      toast.error(
-        error.response?.data?.message || "Sign Up failed. Please try again."
-      );
+      console.error("Signup error details:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+
+      // Extract error message from backend
+      let errorMessage = "Sign Up failed. Please try again.";
+
+      // Handle different error formats
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.status === "fail") {
+        errorMessage = error.response.data.message || "Signup failed";
+      }
+
+      // Show the actual error message to user
+      toast.error(errorMessage);
+
+      // Also highlight the specific field
+      const errorLower = errorMessage.toLowerCase();
+      if (errorLower.includes("email") || errorLower.includes("duplicate")) {
+        setEmailError(errorMessage);
+      } else if (errorLower.includes("password")) {
+        setPassError(errorMessage);
+      } else if (errorLower.includes("terms") || errorLower.includes("agree")) {
+        setTermsError(errorMessage);
+      } else {
+        setTermsError(errorMessage); // General error in terms area
+      }
     } finally {
       setFormLoading(false);
     }
