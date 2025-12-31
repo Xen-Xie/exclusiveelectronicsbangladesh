@@ -5,80 +5,54 @@ import jwt from "jsonwebtoken";
 // Create User
 export const createUser = async (req, res) => {
   try {
-    const { name, email, password, phoneNumber, address, googleId } = req.body;
+    const {
+      name,
+      email,
+      password,
+      phoneNumber,
+      address,
+      googleId,
+      agreeToTerms,
+    } = req.body;
+
+    // Check required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Name, email, and password are required",
+      });
+    }
+
+    // Check terms agreement
+    if (agreeToTerms === false || agreeToTerms === undefined) {
+      return res.status(400).json({
+        status: "fail",
+        message: "You must agree to the Terms & Conditions",
+      });
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res
-        .status(400)
-        .json({ status: "fail", message: "Email already exists" });
-
-    // Hash password only if not Google user
-    let hashedPassword;
-    if (!googleId) {
-      if (!password)
-        return res
-          .status(400)
-          .json({ status: "fail", message: "Password is required" });
-      hashedPassword = await bcrypt.hash(password, 12);
-    }
-
-    // Build user object dynamically
-    const userData = {
-      name,
-      email,
-      phoneNumber,
-      address,
-      ...(googleId && { googleId }),
-      ...(hashedPassword && { password: hashedPassword }),
-    };
-
-    const user = await User.create(userData);
-
-    res.status(201).json({
-      status: "success",
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        address: user.address,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    // Check for duplicate key error
-    if (error.code === 11000) {
+    if (existingUser) {
       return res.status(400).json({
         status: "fail",
-        message: `Duplicate field value entered: ${
-          Object.keys(error.keyValue)[0]
-        }`,
+        message: "Email already exists. Please use a different email or login.",
       });
     }
-    res.status(500).json({ status: "fail", message: error.message });
-  }
-};
 
-// Login User
-export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Check user
-    const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ status: "fail", message: "User not found" });
-
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res
-        .status(400)
-        .json({ status: "fail", message: "Invalid credentials" });
+    // Create user with ALL required fields
+    const user = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      agreeToTerms: agreeToTerms || false, // Ensure this is saved
+      phoneNumber: phoneNumber || "",
+      address: address || "",
+      role: "user",
+    });
 
     // Create token
     const token = jwt.sign(
@@ -87,8 +61,9 @@ export const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
+    res.status(201).json({
       status: "success",
+      message: "Account created successfully!",
       token,
       data: {
         id: user._id,
@@ -97,10 +72,124 @@ export const loginUser = async (req, res) => {
         phoneNumber: user.phoneNumber,
         address: user.address,
         role: user.role,
+        agreeToTerms: user.agreeToTerms,
       },
     });
   } catch (error) {
-    res.status(500).json({ status: "fail", message: error.message });
+    console.error("Create user error:", error);
+
+    // Handle duplicate key error (email already exists)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Email already exists. Please use a different email.",
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({
+        status: "fail",
+        message: messages.join(", "),
+      });
+    }
+
+    // Generic error
+    res.status(500).json({
+      status: "fail",
+      message: "Registration failed. Please try again.",
+    });
+  }
+};
+
+// Login User
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if email and password exist
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Please provide email and password",
+      });
+    }
+
+    // Find user with password field
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+password"
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Incorrect email or password",
+      });
+    }
+
+    // Check if user has a password (Google users might not)
+    if (!user.password) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Please use Google login for this account",
+      });
+    }
+
+    // Compare passwords
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Incorrect email or password",
+      });
+    }
+
+    // Update last login
+    user.lastLogin = Date.now();
+    await user.save({ validateBeforeSave: false });
+
+    // Create token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Remove password from response
+    user.password = undefined;
+
+    res.status(200).json({
+      status: "success",
+      message: "Login successful",
+      token,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        role: user.role,
+        agreeToTerms: user.agreeToTerms,
+      },
+    });
+  } catch (error) {
+    // Specific error for bcrypt issues
+    if (
+      error.message.includes("Illegal arguments") ||
+      error.message.includes("data and salt arguments required")
+    ) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Password comparison failed. Please try again.",
+      });
+    }
+
+    res.status(500).json({
+      status: "fail",
+      message: "Login failed. Please try again.",
+    });
   }
 };
 

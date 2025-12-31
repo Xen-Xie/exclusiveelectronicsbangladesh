@@ -36,8 +36,12 @@ const userSchema = new Schema(
     },
     googleId: {
       type: String,
+      default: undefined,
       sparse: true, // Important: allows multiple null values
-      index: true,
+      index: {
+        sparse: true,
+        unique: false, // Explicitly set unique to false
+      },
     },
     agreeToTerms: {
       type: Boolean,
@@ -129,7 +133,7 @@ userSchema.pre("save", function (next) {
 });
 
 // Create compound index for faster queries
-userSchema.index({ email: 1, googleId: 1 });
+userSchema.index({ email: 1 });
 userSchema.index({ role: 1, isActive: 1 });
 
 export default mongoose.model("User", userSchema);
