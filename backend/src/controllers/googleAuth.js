@@ -2,13 +2,11 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
-// Google/Firebase Auth - Simplified version
+// Google/Firebase Auth - Production version
 export const googleAuth = async (req, res) => {
   try {
     // Accept data from Firebase-authenticated user
     const { uid, email, name, agreeToTerms } = req.body;
-
-    console.log("Google auth request:", { uid, email, name, agreeToTerms });
 
     // Basic validation
     if (!email) {
@@ -30,16 +28,17 @@ export const googleAuth = async (req, res) => {
       $or: [{ email: email.toLowerCase() }, { googleId: uid }],
     });
 
+    const isNewUser = !user;
+
     // User doesn't exist - create new
     if (!user) {
       user = await User.create({
         name: name || email.split("@")[0],
         email: email.toLowerCase(),
         googleId: uid,
-        agreeToTerms: agreeToTerms || false,
+        agreeToTerms: agreeToTerms !== undefined ? agreeToTerms : true, // Default to true for Google users
         role: "user",
       });
-      console.log("New user created:", user.email);
     } else {
       // User exists - update Google ID if missing
       if (uid && !user.googleId) {
@@ -51,13 +50,14 @@ export const googleAuth = async (req, res) => {
         user.name = name;
       }
 
-      // Update terms agreement
+      // Update terms agreement (Google users auto-agree)
       if (agreeToTerms !== undefined) {
         user.agreeToTerms = agreeToTerms;
+      } else if (!user.agreeToTerms) {
+        user.agreeToTerms = true; // Auto-agree for existing Google users
       }
 
       await user.save();
-      console.log("Existing user updated:", user.email);
     }
 
     // Generate JWT token for your app
@@ -74,7 +74,7 @@ export const googleAuth = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      message: user.isNew ? "User created successfully" : "Login successful",
+      message: isNewUser ? "Account created successfully" : "Login successful",
       token,
       data: {
         id: user._id,
@@ -85,8 +85,6 @@ export const googleAuth = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Google auth error:", error);
-
     // Handle duplicate email error
     if (error.code === 11000) {
       return res.status(400).json({
@@ -94,11 +92,20 @@ export const googleAuth = async (req, res) => {
         message: "Email already exists with different account",
       });
     }
+    // Log detailed error
+    if (process.env.NODE_ENV === "production") {
+      console.error("Google auth error (production):", {
+        error: error.name,
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      console.error("Google auth error:", error);
+    }
 
     res.status(500).json({
       status: "fail",
-      message: "Authentication failed",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: "Authentication failed. Please try again.",
     });
   }
 };

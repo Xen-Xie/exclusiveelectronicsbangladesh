@@ -1,4 +1,3 @@
-// models/User.js
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
@@ -8,13 +7,17 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Name is required"],
       trim: true,
+      minlength: [2, "Name must be at least 2 characters"],
+      maxlength: [100, "Name cannot exceed 100 characters"],
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
+      trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"],
+      index: true,
     },
     password: {
       type: String,
@@ -28,29 +31,76 @@ const userSchema = new Schema(
         },
         message: "Password must be at least 6 characters for non-Google users",
       },
+      // Don't include password in query results by default
+      select: false,
     },
     googleId: {
       type: String,
       sparse: true, // Important: allows multiple null values
+      index: true,
     },
     agreeToTerms: {
       type: Boolean,
       default: false,
+      required: [true, "Terms agreement is required"],
     },
-    phoneNumber: { type: String },
-    address: { type: String, default: "" },
-    city: { type: String, default: "" },
-    postalCode: { type: String, default: "" },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [255, "Address cannot exceed 255 characters"],
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [100, "City cannot exceed 100 characters"],
+    },
+    postalCode: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [20, "Postal code cannot exceed 20 characters"],
+    },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
-    // to avoid __v field
     versionKey: false,
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        // Remove sensitive fields
+        delete ret.password;
+        delete ret.googleId;
+        return ret;
+      },
+    },
+    toObject: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        // Remove sensitive fields
+        delete ret.password;
+        delete ret.googleId;
+        return ret;
+      },
+    },
   }
 );
 
@@ -59,9 +109,27 @@ userSchema.virtual("isGoogleUser").get(function () {
   return !!this.googleId;
 });
 
-// Add isNew property (useful for tracking new users)
+// Add isNew property (based on createdAt)
 userSchema.virtual("isNew").get(function () {
-  return Date.now() - this.createdAt < 60000; // Within 1 minute of creation
+  return Date.now() - this.createdAt < 24 * 60 * 60 * 1000; // Within 24 hours of creation
 });
+
+// Update lastLogin on login
+userSchema.methods.updateLastLogin = async function () {
+  this.lastLogin = Date.now();
+  await this.save({ validateBeforeSave: false });
+};
+
+// Pre-save middleware to ensure terms agreement for Google users
+userSchema.pre("save", function (next) {
+  if (this.googleId && !this.agreeToTerms) {
+    this.agreeToTerms = true; // Auto-agree for Google users
+  }
+  next();
+});
+
+// Create compound index for faster queries
+userSchema.index({ email: 1, googleId: 1 });
+userSchema.index({ role: 1, isActive: 1 });
 
 export default mongoose.model("User", userSchema);
