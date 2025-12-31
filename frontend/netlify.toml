@@ -1,0 +1,4 @@
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "script-src 'self' https://apis.google.com https://www.googletagmanager.com https://www.gstatic.com https://accounts.google.com https://www.google-analytics.com 'unsafe-inline' 'unsafe-eval';"
