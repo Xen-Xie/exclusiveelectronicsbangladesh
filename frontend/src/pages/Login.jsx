@@ -1,10 +1,11 @@
 import { useState, useContext } from "react";
 import Btn from "../components/Common/Btn";
 import { Link } from "react-router";
-import GoogleButton from "../components/GoogleButton";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../auth/AuthContext";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provide } from "../firebase/firebase";
 
 function Login() {
   const { login } = useContext(AuthContext);
@@ -17,6 +18,7 @@ function Login() {
   const [passError, setPassError] = useState("");
   const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Email validation
   const validateEmail = (value) => {
@@ -74,6 +76,77 @@ function Login() {
             "Login failed. Please try again."
         );
       }
+    }
+  };
+
+  // Google Login
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setFormError("");
+
+    try {
+      // 1. Sign in with Firebase
+      const result = await signInWithPopup(auth, provide);
+      const user = result.user;
+
+      console.log("Firebase Google user:", user);
+
+      // 2. Prepare data for backend
+      const userData = {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName || user.email.split("@")[0],
+      };
+
+      console.log("Sending to backend for login:", userData);
+
+      // 3. Send to your Google login endpoint
+      const res = await axios.post(`${apiUrl}/api/user/google`, userData);
+
+      console.log("Backend login response:", res.data);
+
+      // 4. Handle success
+      if (res.data.status === "success") {
+        // Store token and user data
+        if (res.data.token) {
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("user", JSON.stringify(res.data.data));
+
+          // Use your auth context login function
+          if (login) {
+            login(res.data.token, () => {
+              navigate("/");
+            });
+          } else {
+            // Fallback: redirect to home
+            alert(res.data.message || "🎉 Successfully logged in with Google!");
+            navigate("/");
+          }
+        }
+      } else {
+        throw new Error(res.data.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+
+      let errorMessage = "Google Login failed. Please try again.";
+
+      // Handle specific Firebase errors
+      if (error.code === "auth/popup-closed-by-user") {
+        errorMessage = "Login cancelled. Please try again.";
+      } else if (error.code === "auth/cancelled-popup-request") {
+        errorMessage = "Login cancelled. Please try again.";
+      } else if (error.code === "auth/popup-blocked") {
+        errorMessage = "Popup was blocked. Please allow popups and try again.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setFormError(errorMessage);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -157,8 +230,30 @@ function Login() {
         </div>
 
         <h1 className="text-center font-semibold font-inter mt-4">OR</h1>
-        <div>
-          <GoogleButton /> {/* Continue with Google */}
+
+        {/* Google Login Button */}
+        <div className="mt-4">
+          <button
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+            className="w-full border px-3 py-3 rounded-3xl outline-none transition border-secondary flex items-center justify-center gap-3 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {googleLoading ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i>
+                <span>Logging in...</span>
+              </>
+            ) : (
+              <>
+                <img
+                  src="/googleLogo.png"
+                  alt="Google Logo"
+                  className="w-5 h-5"
+                />
+                <span className="font-medium">Continue with Google</span>
+              </>
+            )}
+          </button>
         </div>
       </form>
     </div>

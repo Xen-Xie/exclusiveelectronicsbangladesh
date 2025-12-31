@@ -2,7 +2,6 @@
 import { useState } from "react";
 import Btn from "../components/Common/Btn";
 import { Link } from "react-router";
-import GoogleButton from "../components/GoogleButton";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { signInWithPopup } from "firebase/auth";
@@ -22,6 +21,7 @@ function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [termsError, setTermsError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -104,7 +104,7 @@ function SignUp() {
         name,
         email,
         password,
-        agreeToTerms, // Send to backend if needed
+        agreeToTerms,
       });
 
       navigate("/login");
@@ -115,48 +115,77 @@ function SignUp() {
     }
   };
 
-  // Handle Google signup
-  const handleGoogleSignup = () => {
+  // Simplified Google Signup
+  const handleGoogleSignup = async () => {
     if (!agreeToTerms) {
       setTermsError("You must agree to the Terms & Conditions");
-      return false;
+      return;
     }
+
     setTermsError("");
-    return true;
+    setGoogleLoading(true);
+
+    try {
+      // 1. Sign in with Firebase
+      const result = await signInWithPopup(auth, provide);
+      const user = result.user;
+
+      console.log("Firebase user:", user);
+
+      // 2. Prepare simple data for backend
+      const userData = {
+        uid: user.uid, // This is Firebase UID (use as googleId)
+        email: user.email,
+        name: user.displayName || name || user.email.split("@")[0],
+        agreeToTerms: true,
+      };
+
+      console.log("Sending to backend:", userData);
+
+      // 3. Send to your Google auth endpoint
+      const res = await axios.post(`${apiUrl}/api/user/google`, userData);
+
+      console.log("Backend response:", res.data);
+
+      // 4. Handle success
+      if (res.data.status === "success") {
+        // Store token in localStorage
+        if (res.data.token) {
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("user", JSON.stringify(res.data.data));
+        }
+
+        // Show success message
+        alert(res.data.message || "🎉 Successfully signed up with Google!");
+
+        // Redirect to home
+        navigate("/login");
+      } else {
+        throw new Error(res.data.message || "Signup failed");
+      }
+    } catch (error) {
+      console.error("Google signup error:", error);
+
+      let errorMessage = "Google Sign Up failed. Please try again.";
+
+      // Handle specific Firebase errors
+      if (error.code === "auth/popup-closed-by-user") {
+        errorMessage = "Signup cancelled. Please try again.";
+      } else if (error.code === "auth/cancelled-popup-request") {
+        errorMessage = "Signup cancelled. Please try again.";
+      } else if (error.code === "auth/popup-blocked") {
+        errorMessage = "Popup was blocked. Please allow popups and try again.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(errorMessage);
+    } finally {
+      setGoogleLoading(false);
+    }
   };
-  // FireBase Google Signup
- const handleGoogleSignups = async () => {
-  if (!agreeToTerms) {
-    setTermsError("You must agree to the Terms & Conditions");
-    return;
-  }
-  
-  try {
-    // 1. Sign in with Firebase
-    const result = await signInWithPopup(auth, provide);
-    const user = result.user;
-    
-    // 2. Send user data to your backend
-    const res = await axios.post(`${apiUrl}/api/user/signup`, {
-      uid: user.uid,
-      name: user.displayName,
-      email: user.email,
-      agreeToTerms, // Send terms agreement
-      // Add any other data your backend needs
-    });
-    
-    // 3. Handle successful backend registration
-    console.log("Backend registration successful:", res.data);
-    navigate("/dashboard"); // Or wherever you want to redirect
-    
-  } catch (error) {
-    console.error("Google signup error:", error);
-    alert(
-      error.response?.data?.message || 
-      "Google Sign Up failed. Please try again."
-    );
-  }
-};
 
   return (
     <div className="bg-container max-w-md mx-2 xs:mx-3 md:mx-auto mt-10 p-6 rounded-2xl shadow-lg font-urbanist mb-8">
@@ -296,7 +325,7 @@ function SignUp() {
             variant="primary"
             type="submit"
             className="w-full mt-4"
-            disabled={!agreeToTerms} // visually disable button when terms not agreed
+            disabled={!agreeToTerms}
           >
             Sign Up
           </Btn>
@@ -308,17 +337,31 @@ function SignUp() {
             Login
           </Link>
         </div>
-        <h1 className="text-center font-semibold font-inter">OR</h1>
-        <div>
-          <GoogleButton onBeforeSignup={handleGoogleSignup} />
-        </div>
-        <div>
+
+        <h1 className="text-center font-semibold font-inter mt-4">OR</h1>
+
+        {/* Google Signup Button */}
+        <div className="mt-4">
           <button
-            onClick={handleGoogleSignups}
-            className="w-full mt-4 border px-3 py-1.5 rounded-3xl outline-none transition border-secondary flex items-center justify-center gap-2"
+            onClick={handleGoogleSignup}
+            disabled={googleLoading || !agreeToTerms}
+            className="w-full border px-3 py-3 rounded-3xl outline-none transition border-secondary flex items-center justify-center gap-3 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
-            <img src="/googleLogo.png" alt="Google Logo" className="w-5 h-5" />
-            <span className="font-medium">Sign Up with Google 2</span>
+            {googleLoading ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i>
+                <span>Signing up...</span>
+              </>
+            ) : (
+              <>
+                <img
+                  src="/googleLogo.png"
+                  alt="Google Logo"
+                  className="w-5 h-5"
+                />
+                <span className="font-medium">Sign Up with Google</span>
+              </>
+            )}
           </button>
         </div>
       </form>
