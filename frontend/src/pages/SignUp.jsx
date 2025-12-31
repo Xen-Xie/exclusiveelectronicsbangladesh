@@ -5,6 +5,8 @@ import { Link } from "react-router";
 import GoogleButton from "../components/GoogleButton";
 import axios from "axios";
 import { useNavigate } from "react-router";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provide } from "../firebase/firebase";
 
 function SignUp() {
   const [name, setName] = useState("");
@@ -122,6 +124,39 @@ function SignUp() {
     setTermsError("");
     return true;
   };
+  // FireBase Google Signup
+ const handleGoogleSignups = async () => {
+  if (!agreeToTerms) {
+    setTermsError("You must agree to the Terms & Conditions");
+    return;
+  }
+  
+  try {
+    // 1. Sign in with Firebase
+    const result = await signInWithPopup(auth, provide);
+    const user = result.user;
+    
+    // 2. Send user data to your backend
+    const res = await axios.post(`${apiUrl}/api/user/signup`, {
+      uid: user.uid,
+      name: user.displayName,
+      email: user.email,
+      agreeToTerms, // Send terms agreement
+      // Add any other data your backend needs
+    });
+    
+    // 3. Handle successful backend registration
+    console.log("Backend registration successful:", res.data);
+    navigate("/dashboard"); // Or wherever you want to redirect
+    
+  } catch (error) {
+    console.error("Google signup error:", error);
+    alert(
+      error.response?.data?.message || 
+      "Google Sign Up failed. Please try again."
+    );
+  }
+};
 
   return (
     <div className="bg-container max-w-md mx-2 xs:mx-3 md:mx-auto mt-10 p-6 rounded-2xl shadow-lg font-urbanist mb-8">
@@ -276,6 +311,15 @@ function SignUp() {
         <h1 className="text-center font-semibold font-inter">OR</h1>
         <div>
           <GoogleButton onBeforeSignup={handleGoogleSignup} />
+        </div>
+        <div>
+          <button
+            onClick={handleGoogleSignups}
+            className="w-full mt-4 border px-3 py-1.5 rounded-3xl outline-none transition border-secondary flex items-center justify-center gap-2"
+          >
+            <img src="/googleLogo.png" alt="Google Logo" className="w-5 h-5" />
+            <span className="font-medium">Sign Up with Google 2</span>
+          </button>
         </div>
       </form>
     </div>
