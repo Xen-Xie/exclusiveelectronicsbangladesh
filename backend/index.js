@@ -19,7 +19,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://exclusiveelectronicbangladesh.netlify.app",
-      "https://exclusivebd.org",
+      "https://dropore.store",
     ],
     credentials: true,
   })
