@@ -24,25 +24,19 @@ function Footer() {
 
   const socialLinks = [
     {
-      href: "https://www.facebook.com/share/1D2DZG9Efg/",
+      href: "https://www.facebook.com/dropore",
       icon: "fa-brands fa-facebook-f",
       label: "Facebook",
       color: "hover:bg-blue-600",
     },
     {
-      href: "https://www.instagram.com/md.rakibulhasanhemel/",
+      href: "#",
       icon: "fa-brands fa-instagram",
       label: "Instagram",
       color: "hover:bg-pink-600",
     },
     {
-      href: "https://github.com/Xen-Xie",
-      icon: "fa-brands fa-github",
-      label: "GitHub",
-      color: "hover:bg-gray-600",
-    },
-    {
-      href: "mailto:rh189827@gmail.com",
+      href: "mailto:droporeofficial@gmail.com",
       icon: "fa-solid fa-envelope",
       label: "Email",
       color: "hover:bg-red-500",
@@ -69,8 +63,8 @@ function Footer() {
               <div className="flex items-start gap-3">
                 <i className="fa-solid fa-location-dot text-primary text-lg mt-1 shrink-0"></i>
                 <span className="text-sm md:text-base">
-                  9 KA/KHA, Level 5, Tejgaon Industrial Area, Tejgaon, Dhaka -
-                  1215
+                  Mirpur, Dhaka -
+                  1216
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -80,7 +74,7 @@ function Footer() {
               <div className="flex items-center gap-3">
                 <i className="fa-solid fa-envelope text-primary text-lg shrink-0"></i>
                 <span className="text-sm md:text-base">
-                  support@exclusiveelectronicsbd.com
+                  droporeofficial@gmail.com
                 </span>
               </div>
             </div>
@@ -144,17 +138,13 @@ function Footer() {
               <p className="text-gray-400 text-sm">
                 Copyright © {currentYear}{" "}
                 <span className="text-primary font-medium">
-                  Exclusive Electronics BD
+                  Dropore
                 </span>
                 . All rights reserved.
               </p>
             </div>
 
             <div className="text-center md:text-right">
-              <p className="text-gray-400 text-sm">
-                Developed by{" "}
-                <span className="text-primary font-medium">Xen Xie Team</span>
-              </p>
             </div>
           </div>
         </div>
