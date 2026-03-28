@@ -1,6 +1,17 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
+const wishlistItemSchema = new mongoose.Schema({
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
+  addedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 const userSchema = new Schema(
   {
     name: {
@@ -83,6 +94,7 @@ const userSchema = new Schema(
       type: Date,
       default: Date.now,
     },
+    wishlist: [wishlistItemSchema],
   },
   {
     timestamps: true,
@@ -105,7 +117,7 @@ const userSchema = new Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 // Add virtual field to check if user is Google user

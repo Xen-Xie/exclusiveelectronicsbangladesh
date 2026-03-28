@@ -10,6 +10,7 @@ import behaviorRoutes from "./src/routes/behaviourRoutes.js";
 import bannerRoutes from "./src/routes/bannerRoutes.js";
 import reviewRoutes from "./src/routes/reviewRoutes.js";
 import healthRoutes from "./src/routes/healthRoutes.js";
+import wishlistRoutes from "./src/routes/wishlistRoutes.js";
 
 const app = express();
 dotenv.config();
@@ -22,7 +23,7 @@ app.use(
       "https://dropore.store",
     ],
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 const url = process.env.MONGO_URL;
 DB(url);
 app.use("/api/user", userRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/payment", paymentRoutes);
