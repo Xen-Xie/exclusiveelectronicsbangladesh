@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
         clearAuth();
       }
     },
-    [clearAuth]
+    [clearAuth],
   );
 
   // Decode token on mount or token change
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
         if (t) config.headers.Authorization = `Bearer ${t}`;
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     // Logout automatically if any response returns 401 Unauthorized
@@ -82,7 +82,7 @@ export function AuthProvider({ children }) {
           clearAuth();
         }
         return Promise.reject(error);
-      }
+      },
     );
 
     // Cleanup interceptors on unmount
@@ -114,7 +114,13 @@ export function AuthProvider({ children }) {
   };
 
   // Provide AuthContext values and wait until token decoded
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
+        <div className="w-8 h-8 border-2 border-gray-300 border-t-stone-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout, token }}>
