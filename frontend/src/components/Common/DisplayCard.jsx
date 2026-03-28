@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import { useAuth } from "../../auth/useAuth";
@@ -18,14 +18,10 @@ function DisplayCard({ product, loading = false }) {
   const [popupType, setPopupType] = useState("");
   const [heartBeat, setHeartBeat] = useState(false);
 
-  // Check if product is in wishlist on component mount
-  useEffect(() => {
-    if (token && product?._id) {
-      checkWishlistStatus();
-    }
-  }, [token, product?._id]);
+  // Wrap checkWishlistStatus in useCallback
+  const checkWishlistStatus = useCallback(async () => {
+    if (!token || !product?._id) return;
 
-  const checkWishlistStatus = async () => {
     try {
       const response = await axios.get(
         `${apiUrl}/api/wishlist/check/${product._id}`,
@@ -37,7 +33,14 @@ function DisplayCard({ product, loading = false }) {
     } catch (error) {
       console.error("Error checking wishlist status:", error);
     }
-  };
+  }, [token, product?._id, apiUrl]);
+
+  // Check if product is in wishlist on component mount
+  useEffect(() => {
+    if (token && product?._id) {
+      checkWishlistStatus();
+    }
+  }, [token, product?._id, checkWishlistStatus]);
 
   const showAnimatedPopup = (message, type) => {
     setPopupMessage(message);
@@ -48,15 +51,55 @@ function DisplayCard({ product, loading = false }) {
     }, 2000);
   };
 
+  // Improved toast configuration
+  const showToast = (message, type, icon) => {
+    toast.custom(
+      (t) => (
+        <motion.div
+          initial={{ opacity: 0, x: 50, scale: 0.9 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 50, scale: 0.9 }}
+          transition={{ type: "spring", damping: 20, stiffness: 300 }}
+          className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl shadow-2xl ${
+            type === "success"
+              ? "bg-linear-to-r from-green-500 to-green-600"
+              : type === "error"
+              ? "bg-linear-to-r from-red-500 to-red-600"
+              : type === "remove"
+              ? "bg-linear-to-r from-gray-600 to-gray-700"
+              : "bg-linear-to-r from-blue-500 to-blue-600"
+          } text-white border border-white/20 max-w-[90vw] sm:max-w-sm`}
+        >
+          <motion.i
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className={`${icon} text-base sm:text-lg shrink-0`}
+          ></motion.i>
+          <span className="font-medium text-xs sm:text-sm wrap-break-word flex-1">
+            {message}
+          </span>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="shrink-0 ml-1 sm:ml-2 hover:opacity-80 transition-opacity"
+          >
+            <i className="fa-solid fa-times text-xs sm:text-sm"></i>
+          </button>
+        </motion.div>
+      ),
+      {
+        duration: 2500,
+        position: "top-right",
+      },
+    );
+  };
+
   const addToWishlist = async (e) => {
     e.stopPropagation();
     if (!token) {
       navigate("/login");
       showAnimatedPopup("Please login to add to wishlist", "error");
-      toast.error("Please login to add to wishlist", {
-        icon: "🔒",
-        duration: 3000,
-      });
+      showToast("Please login to add to wishlist", "error", "fa-solid fa-lock");
       return;
     }
 
@@ -71,38 +114,21 @@ function DisplayCard({ product, loading = false }) {
       setHeartBeat(true);
       setTimeout(() => setHeartBeat(false), 500);
       showAnimatedPopup("Added to wishlist! ❤️", "success");
-      toast.success("Added to wishlist", {
-        icon: "❤️",
-        duration: 2000,
-        style: {
-          background: "#10B981",
-          color: "#fff",
-        },
-      });
+      showToast("Added to wishlist", "success", "fa-solid fa-heart");
     } catch (error) {
       if (error.response?.data?.message === "Product already in wishlist") {
         setIsInWishlist(true);
         setHeartBeat(true);
         setTimeout(() => setHeartBeat(false), 500);
         showAnimatedPopup("Already in wishlist! 📚", "info");
-        toast("Already in wishlist", {
-          icon: "📚",
-          duration: 2000,
-          style: {
-            background: "#3B82F6",
-            color: "#fff",
-          },
-        });
+        showToast("Already in wishlist", "info", "fa-solid fa-book");
       } else {
         showAnimatedPopup("Failed to add to wishlist", "error");
-        toast.error("Failed to add to wishlist", {
-          icon: "❌",
-          duration: 3000,
-          style: {
-            background: "#EF4444",
-            color: "#fff",
-          },
-        });
+        showToast(
+          "Failed to add to wishlist",
+          "error",
+          "fa-solid fa-exclamation-circle",
+        );
       }
     } finally {
       setAddingToWishlist(false);
@@ -118,25 +144,15 @@ function DisplayCard({ product, loading = false }) {
       });
       setIsInWishlist(false);
       showAnimatedPopup("Removed from wishlist! 💔", "remove");
-      toast.success("Removed from wishlist", {
-        icon: "💔",
-        duration: 2000,
-        style: {
-          background: "#6B7280",
-          color: "#fff",
-        },
-      });
+      showToast("Removed from wishlist", "remove", "fa-solid fa-trash-alt");
     } catch (error) {
       console.error("Error removing from wishlist:", error);
       showAnimatedPopup("Failed to remove from wishlist", "error");
-      toast.error("Failed to remove from wishlist", {
-        icon: "❌",
-        duration: 3000,
-        style: {
-          background: "#EF4444",
-          color: "#fff",
-        },
-      });
+      showToast(
+        "Failed to remove from wishlist",
+        "error",
+        "fa-solid fa-exclamation-circle",
+      );
     } finally {
       setAddingToWishlist(false);
     }
@@ -314,7 +330,7 @@ function DisplayCard({ product, loading = false }) {
 
         {/* Product details */}
         <div className="p-2 sm:p-3">
-          <h2 className="text-xs sm:text-sm font-semibold text-gray-800 line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem] sm:min-h-[3rem]">
+          <h2 className="text-xs sm:text-sm font-semibold text-gray-800 line-clamp-2 group-hover:text-primary transition-colors min-h-10 sm:min-h-12">
             {product?.name || "Unnamed Product"}
           </h2>
 
@@ -351,7 +367,7 @@ function DisplayCard({ product, loading = false }) {
 
             {/* Sold count */}
             {soldCount > 0 && (
-              <span className="text-xs text-gray-500 font-medium flex-shrink-0">
+              <span className="text-xs text-gray-500 font-medium shrink-0">
                 🔥 {soldCount}
               </span>
             )}
@@ -359,60 +375,83 @@ function DisplayCard({ product, loading = false }) {
         </div>
       </div>
 
-      {/* Animated Popup */}
-      <AnimatePresence>
+      {/* Animated Popup - Improved with smoother animation */}
+      <AnimatePresence mode="wait">
         {showPopup && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -50, scale: 0.8 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50"
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{
+              type: "spring",
+              damping: 25,
+              stiffness: 400,
+              mass: 0.5,
+            }}
+            className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
           >
             <div
-              className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl backdrop-blur-sm ${
+              className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl shadow-2xl backdrop-blur-md ${
                 popupType === "success"
-                  ? "bg-gradient-to-r from-green-500 to-green-600"
+                  ? "bg-linear-to-r from-green-500 to-green-600"
                   : popupType === "error"
-                  ? "bg-gradient-to-r from-red-500 to-red-600"
+                  ? "bg-linear-to-r from-red-500 to-red-600"
                   : popupType === "remove"
-                  ? "bg-gradient-to-r from-gray-600 to-gray-700"
-                  : "bg-gradient-to-r from-blue-500 to-blue-600"
-              } text-white border border-white/20`}
+                  ? "bg-linear-to-r from-gray-600 to-gray-700"
+                  : "bg-linear-to-r from-blue-500 to-blue-600"
+              } text-white border border-white/20 max-w-[85vw] sm:max-w-sm`}
             >
               {popupType === "success" && (
                 <motion.i
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="fa-solid fa-heart text-white text-lg"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 15,
+                  }}
+                  className="fa-solid fa-heart text-white text-base sm:text-lg shrink-0"
                 ></motion.i>
               )}
               {popupType === "remove" && (
                 <motion.i
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="fa-solid fa-trash-alt text-white text-lg"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 15,
+                  }}
+                  className="fa-solid fa-trash-alt text-white text-base sm:text-lg shrink-0"
                 ></motion.i>
               )}
               {popupType === "error" && (
                 <motion.i
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="fa-solid fa-exclamation-circle text-white text-lg"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 15,
+                  }}
+                  className="fa-solid fa-exclamation-circle text-white text-base sm:text-lg shrink-0"
                 ></motion.i>
               )}
               {popupType === "info" && (
                 <motion.i
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="fa-solid fa-info-circle text-white text-lg"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 15,
+                  }}
+                  className="fa-solid fa-info-circle text-white text-base sm:text-lg shrink-0"
                 ></motion.i>
               )}
-              <span className="font-medium text-sm">{popupMessage}</span>
+              <span className="font-medium text-xs sm:text-sm wrap-break-word flex-1 text-center sm:text-left">
+                {popupMessage}
+              </span>
             </div>
           </motion.div>
         )}
