@@ -11,8 +11,8 @@ function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(""); // Track search term
-  const [isSearching, setIsSearching] = useState(false); // Track if user is searching
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [forYouProducts, setForYouProducts] = useState([]);
@@ -30,7 +30,7 @@ function Home() {
         { type, ...data },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
     } catch (error) {
       console.error("Failed to track behavior:", error);
@@ -65,7 +65,7 @@ function Home() {
           `${apiUrl}/api/behavior/recommendations?limit=8`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setForYouProducts(res.data.data);
       } catch (error) {
@@ -98,7 +98,7 @@ function Home() {
         // Fetch personalized recommendations
         await fetchRecommendations(productsData);
 
-        // Extract unique categories from products with their images
+        // Extract unique categories
         const categoryMap = new Map();
 
         productsData.forEach((product) => {
@@ -109,7 +109,6 @@ function Home() {
             // Add product image if available - handle different image formats
             let imageUrl = "";
             if (product.images && product.images.length > 0) {
-              // Handle both {url: string} format and direct string format
               imageUrl =
                 typeof product.images[0] === "string"
                   ? product.images[0]
@@ -128,9 +127,9 @@ function Home() {
             images: images,
             displayImage: getRandomImage(images),
             productCount: productsData.filter(
-              (p) => p.category === categoryName
+              (p) => p.category === categoryName,
             ).length,
-          })
+          }),
         );
 
         setCategories(categoriesWithImages);
@@ -142,7 +141,7 @@ function Home() {
     };
 
     fetchData();
-  }, [apiUrl, user, token]); // Only stable dependencies
+  }, [apiUrl, user, token]);
 
   // Refresh recommendations function
   const refreshRecommendations = async () => {
@@ -162,7 +161,7 @@ function Home() {
         `${apiUrl}/api/behavior/recommendations?limit=8`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       setForYouProducts(res.data.data);
     } catch (error) {
@@ -199,14 +198,14 @@ function Home() {
     }
   };
 
-  // If still loading, render a skeleton loading state
+  // Loading state with fixed product section skeletons
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto p-6 font-urbanist">
         {/* Include SearchBar even during loading for consistency */}
         <SearchBar products={products} onSearch={handleSearch} />
 
-        {/* Categories Skeleton */}
+        {/* Categories Skeleton - Keep your original style */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4 font-urbanist">Categories</h2>
           <div className="flex space-x-4 overflow-x-auto pb-4">
@@ -219,28 +218,22 @@ function Home() {
           </div>
         </div>
 
-        {/* For You Skeleton */}
+        {/* For You Skeleton - Fixed grid */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4 font-urbanist">
             Just For You
           </h2>
-          <div className="grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
             {Array.from({ length: 4 }).map((_, index) => (
               <DisplayCard key={index} loading={true} />
             ))}
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-center my-6 font-urbanist">
+        <h1 className="text-2xl font-bold my-6 font-urbanist">
           Featured Products
         </h1>
-        {/* Grid container for skeleton cards */}
-        <div
-          className="
-            grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
-          "
-        >
-          {/* Render 6 skeleton cards to simulate loading */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {Array.from({ length: 6 }).map((_, index) => (
             <DisplayCard key={index} loading={true} />
           ))}
@@ -249,7 +242,7 @@ function Home() {
     );
   }
 
-  // Main render when not loading
+  // Main render
   return (
     <div className="max-w-7xl mx-auto p-6 font-urbanist">
       <BannerCarousel />
@@ -257,7 +250,7 @@ function Home() {
       {/* SearchBar */}
       <SearchBar products={products} onSearch={handleSearch} />
 
-      {/* Show search results header when searching */}
+      {/* Search Results Header */}
       {isSearching && (
         <div className="mb-6">
           <h1 className="text-2xl font-bold font-urbanist">
@@ -270,7 +263,7 @@ function Home() {
         </div>
       )}
 
-      {/* Categories Section - Hide when searching */}
+      {/* Categories Section - KEPT ORIGINAL */}
       {!isSearching && (
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4 font-urbanist">Categories</h2>
@@ -296,10 +289,6 @@ function Home() {
                       alt={category.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        console.log(
-                          "Image failed to load:",
-                          category.displayImage
-                        );
                         e.target.src = "/placeholder.jpg";
                         e.target.className =
                           "w-12 h-12 object-contain opacity-50";
@@ -320,7 +309,7 @@ function Home() {
         </div>
       )}
 
-      {/* For You Section - Hide when searching */}
+      {/* For You Section - FIXED GRID */}
       {!isSearching && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -350,12 +339,7 @@ function Home() {
               </p>
             </div>
           ) : (
-            <div
-              className="
-                grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
-                justify-items-center px-4
-              "
-            >
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               {forYouProducts.map((product) => (
                 <div
                   key={product._id}
@@ -369,16 +353,10 @@ function Home() {
         </div>
       )}
 
-      {/* Products Section - Show different title based on search state */}
-      {!isSearching ? (
-        <h1 className="text-2xl font-bold my-6 font-urbanist">
-          Featured Products
-        </h1>
-      ) : (
-        <h1 className="text-2xl font-bold my-6 font-urbanist">
-          Search Results
-        </h1>
-      )}
+      {/* Featured/Search Results Section - FIXED GRID */}
+      <h1 className="text-2xl font-bold my-6 font-urbanist">
+        {!isSearching ? "Featured Products" : "Search Results"}
+      </h1>
 
       {filteredProducts.length === 0 ? (
         isSearching ? (
@@ -408,13 +386,7 @@ function Home() {
           </p>
         )
       ) : (
-        <div
-          className="
-            grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4
-            justify-items-center px-4
-          "
-        >
-          {/* Map over filtered products and render a DisplayCard for each */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {filteredProducts.map((product) => (
             <div
               key={product._id}
@@ -425,6 +397,7 @@ function Home() {
           ))}
         </div>
       )}
+
       {!isSearching && <TopRated limit={10} />}
     </div>
   );

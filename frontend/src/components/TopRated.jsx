@@ -61,7 +61,7 @@ function TopRated({ limit = 8 }) {
 
   if (loading) {
     return (
-      <div className="mb-8">
+      <div className="mb-8 mt-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-star text-warning text-xl"></i>
@@ -70,7 +70,7 @@ function TopRated({ limit = 8 }) {
             </h2>
           </div>
         </div>
-        <div className="grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 justify-items-center px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {Array.from({ length: 4 }).map((_, index) => (
             <DisplayCard key={index} loading={true} />
           ))}
@@ -81,7 +81,7 @@ function TopRated({ limit = 8 }) {
 
   if (error && topRatedProducts.length === 0) {
     return (
-      <div className="mb-8">
+      <div className="mb-8 mt-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <i className="fa-solid fa-star text-warning text-xl"></i>
@@ -125,7 +125,7 @@ function TopRated({ limit = 8 }) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 xs:gap-11 md:gap-18 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 justify-items-center px-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {topRatedProducts.map((product) => (
             <DisplayCard
               key={product._id}
