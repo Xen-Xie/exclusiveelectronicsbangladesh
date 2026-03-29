@@ -65,12 +65,16 @@ const orderSchema = new mongoose.Schema(
       ],
       default: "created",
     },
+    stockReduced: {
+      type: Boolean,
+      default: false,
+    },
 
     payment: paymentSchema,
 
     notes: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Order", orderSchema);

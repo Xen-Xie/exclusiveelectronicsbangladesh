@@ -2,6 +2,7 @@
 import pkg from "sslcommerz-lts";
 import Order from "../models/Order.js";
 import sslconfig from "../config/sslcommerz.js";
+import Product from "../models/Product.js";
 
 // handle CJS export interop safely
 const SSLCommerzPayment = pkg && (pkg.default || pkg);
@@ -102,7 +103,7 @@ export const initPayment = async (req, res) => {
     const sslcommerz = new SSLCommerzPayment(
       sslconfig.store_id,
       sslconfig.store_passwd,
-      sslconfig.sandbox
+      sslconfig.sandbox,
     );
 
     const response = await sslcommerz.init(data);
@@ -157,14 +158,14 @@ export const sslSuccess = async (req, res) => {
 
     if (!orderId) {
       return res.redirect(
-        getFrontendUrl("/payment-failed?error=invalid_request")
+        getFrontendUrl("/payment-failed?error=invalid_request"),
       );
     }
 
     const order = await Order.findById(orderId);
     if (!order) {
       return res.redirect(
-        getFrontendUrl("/payment-failed?error=order_not_found")
+        getFrontendUrl("/payment-failed?error=order_not_found"),
       );
     }
 
@@ -173,14 +174,7 @@ export const sslSuccess = async (req, res) => {
       return res.redirect(getFrontendUrl(`/payment-success?order=${orderId}`));
     }
 
-    // Validate payment data
-    if (!req.body.tran_id && !req.body.bank_tran_id) {
-      return res.redirect(
-        getFrontendUrl("/payment-failed?error=invalid_transaction")
-      );
-    }
-
-    // Update order status
+    // Update order status (DO NOT reduce stock - already reduced at order creation)
     order.payment = {
       method: "sslcommerz",
       status: "paid",
@@ -189,20 +183,23 @@ export const sslSuccess = async (req, res) => {
       paidAt: new Date(),
     };
     order.status = "paid";
+
+    // Update sold count (stock was already reduced when order was created)
+    for (const item of order.items) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        product.sold = (product.sold || 0) + item.qty;
+        await product.save();
+      }
+    }
+
     await order.save();
 
     return res.redirect(getFrontendUrl(`/payment-success?order=${orderId}`));
   } catch (error) {
-    // Log error for monitoring
-    if (process.env.NODE_ENV === "production") {
-      logger.error("Payment success callback error", {
-        error: error.message,
-        orderId: req.params.orderId,
-      });
-    }
-
+    console.error("Payment success callback error:", error);
     return res.redirect(
-      getFrontendUrl("/payment-failed?error=processing_error")
+      getFrontendUrl("/payment-failed?error=processing_error"),
     );
   }
 };
@@ -222,7 +219,7 @@ export const sslFail = async (req, res) => {
     }
 
     return res.redirect(
-      getFrontendUrl(`/payment-failed?order=${orderId || ""}`)
+      getFrontendUrl(`/payment-failed?order=${orderId || ""}`),
     );
   } catch (error) {
     // Log error for monitoring
@@ -251,7 +248,7 @@ export const sslCancel = async (req, res) => {
     }
 
     return res.redirect(
-      getFrontendUrl(`/payment-cancelled?order=${orderId || ""}`)
+      getFrontendUrl(`/payment-cancelled?order=${orderId || ""}`),
     );
   } catch (error) {
     // Log error for monitoring

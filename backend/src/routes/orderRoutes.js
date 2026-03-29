@@ -9,6 +9,7 @@ import {
   updateOrderStatus,
   deleteOrder,
   getOrdersByPeriod,
+  markCODOrderPaid,
 } from "../controllers/OrderController.js";
 
 import {
@@ -37,6 +38,7 @@ router.put("/:id/cancel", authenticateToken, cancelOrder);
 router.put("/:id/status", authenticateToken, isAdmin, updateOrderStatus);
 
 router.delete("/:id", authenticateToken, isAdmin, deleteOrder);
+router.patch("/:id/mark-cod-paid", authenticateToken, isAdmin, markCODOrderPaid);
 
 // SSL PAYMENT ROUTES
 router.get("/payment/ssl/:orderId", authenticateToken, initPayment);
