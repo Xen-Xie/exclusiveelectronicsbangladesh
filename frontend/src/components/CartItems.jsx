@@ -118,7 +118,7 @@ function CartItems() {
         <Btn
           variant="primary"
           onClick={() => navigate("/checkout")}
-          className="bg-[#0A0A0A] text-primarybg py-3 px-6 rounded-lg"
+          className="bg-classic text-primarybg py-3 px-6 rounded-lg"
         >
           Proceed to Checkout
         </Btn>
