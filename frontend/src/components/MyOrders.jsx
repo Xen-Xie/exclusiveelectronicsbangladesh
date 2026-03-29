@@ -26,209 +26,217 @@ export default function MyOrders() {
   const [notifiedDeliveries, setNotifiedDeliveries] = useState(new Set());
 
   // Function to check if order is cash on delivery
-  const isCashOnDelivery = (order) => {
+  const isCashOnDelivery = useCallback((order) => {
     return (
       order.payment?.method === "cash_on_delivery" ||
       order.payment?.status === "cash_on_delivery"
     );
-  };
-
-  // Get order phases based on payment method
-  const getOrderPhases = (order) => {
-    const isCOD = isCashOnDelivery(order);
-
-    if (isCOD) {
-      // For Cash on Delivery orders, payment happens after delivery
-      return [
-        {
-          status: "created",
-          label: "Order Created",
-          icon: "fa-solid fa-cart-plus",
-          color: "bg-gray-500",
-          activeColor: "bg-gray-600",
-          description: "Your order has been placed successfully",
-        },
-        {
-          status: "processing",
-          label: "Processing",
-          icon: "fa-solid fa-gear",
-          color: "bg-purple-500",
-          activeColor: "bg-purple-600",
-          description: "Your order is being prepared for shipment",
-        },
-        {
-          status: "shipped",
-          label: "Shipped",
-          icon: "fa-solid fa-truck",
-          color: "bg-indigo-500",
-          activeColor: "bg-indigo-600",
-          description: "Your order has been shipped and is on its way",
-        },
-        {
-          status: "delivered",
-          label: "Delivered",
-          icon: "fa-solid fa-check-circle",
-          color: "bg-green-500",
-          activeColor: "bg-green-600",
-          description: "Your order has been delivered",
-        },
-        {
-          status: "payment_pending",
-          label: "Payment Pending",
-          icon: "fa-solid fa-credit-card",
-          color: "bg-yellow-500",
-          activeColor: "bg-yellow-600",
-          description: "Payment will be collected at delivery",
-        },
-        {
-          status: "paid",
-          label: "Payment Completed",
-          icon: "fa-solid fa-money-bill-wave",
-          color: "bg-emerald-500",
-          activeColor: "bg-emerald-600",
-          description: "Payment has been successfully collected",
-        },
-      ];
-    } else {
-      // For online payment orders
-      return [
-        {
-          status: "created",
-          label: "Order Created",
-          icon: "fa-solid fa-cart-plus",
-          color: "bg-gray-500",
-          activeColor: "bg-gray-600",
-          description: "Your order has been placed successfully",
-        },
-        {
-          status: "paid",
-          label: "Payment Confirmed",
-          icon: "fa-solid fa-credit-card",
-          color: "bg-blue-500",
-          activeColor: "bg-blue-600",
-          description: "Payment has been received and confirmed",
-        },
-        {
-          status: "processing",
-          label: "Processing",
-          icon: "fa-solid fa-gear",
-          color: "bg-purple-500",
-          activeColor: "bg-purple-600",
-          description: "Your order is being prepared for shipment",
-        },
-        {
-          status: "shipped",
-          label: "Shipped",
-          icon: "fa-solid fa-truck",
-          color: "bg-indigo-500",
-          activeColor: "bg-indigo-600",
-          description: "Your order has been shipped and is on its way",
-        },
-        {
-          status: "delivered",
-          label: "Delivered",
-          icon: "fa-solid fa-check-circle",
-          color: "bg-green-500",
-          activeColor: "bg-green-600",
-          description: "Your order has been delivered successfully",
-        },
-      ];
-    }
-  };
-
-  // Status colors mapping for visual status indicators
-  const statusColors = {
-    paid: "bg-success/20 text-success",
-    cancelled: "bg-danger/20 text-danger",
-    pending: "bg-primary/20 text-primary",
-    created: "bg-warning/20 text-warning",
-    processing: "bg-primary/20 text-primary",
-    shipped: "bg-indigo-100 text-indigo-800",
-    delivered: "bg-teal-100 text-teal-800",
-    returned: "bg-pink-100 text-pink-800",
-    payment_pending: "bg-yellow-100 text-yellow-800",
-  };
-
-  // Get current phase index based on order status and payment method
-  const getCurrentPhaseIndex = (order) => {
-    const phases = getOrderPhases(order);
-    let currentStatus = order.status;
-
-    // For COD orders, handle payment status specially
-    if (isCashOnDelivery(order)) {
-      if (order.status === "delivered" && order.payment?.status !== "paid") {
-        currentStatus = "payment_pending";
-      } else if (
-        order.payment?.status === "paid" &&
-        order.status === "delivered"
-      ) {
-        currentStatus = "paid";
-      }
-    }
-
-    const index = phases.findIndex((phase) => phase.status === currentStatus);
-    return index !== -1 ? index : 0;
-  };
-
-  // Check if phase is completed
-  const isPhaseCompleted = (phaseStatus, order) => {
-    const phaseIndex = getOrderPhases(order).findIndex(
-      (phase) => phase.status === phaseStatus,
-    );
-    const currentIndex = getCurrentPhaseIndex(order);
-    return phaseIndex <= currentIndex;
-  };
-
-  // Check if phase is current
-  const isPhaseCurrent = (phaseStatus, order) => {
-    let currentStatus = order.status;
-
-    if (isCashOnDelivery(order)) {
-      if (order.status === "delivered" && order.payment?.status !== "paid") {
-        currentStatus = "payment_pending";
-      } else if (
-        order.payment?.status === "paid" &&
-        order.status === "delivered"
-      ) {
-        currentStatus = "paid";
-      }
-    }
-
-    return phaseStatus === currentStatus;
-  };
-
-  // Check notification permission on component mount
-  useEffect(() => {
-    if ("Notification" in window) {
-      setNotificationPermission(Notification.permission);
-    }
   }, []);
 
-  // Check if review period has expired (7 days after delivery)
-  const isReviewPeriodExpired = (deliveryDate) => {
-    if (!deliveryDate) return true;
+  // Get order phases based on payment method
+  const getOrderPhases = useCallback(
+    (order) => {
+      const isCOD = isCashOnDelivery(order);
 
-    const delivery = new Date(deliveryDate);
-    const now = new Date();
-    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+      if (isCOD) {
+        // For Cash on Delivery orders, payment happens after delivery
+        return [
+          {
+            status: "created",
+            label: "Order Created",
+            icon: "fa-solid fa-cart-plus",
+            color: "bg-gray-500",
+            activeColor: "bg-gray-600",
+            description: "Your order has been placed successfully",
+          },
+          {
+            status: "processing",
+            label: "Processing",
+            icon: "fa-solid fa-gear",
+            color: "bg-purple-500",
+            activeColor: "bg-purple-600",
+            description: "Your order is being prepared for shipment",
+          },
+          {
+            status: "shipped",
+            label: "Shipped",
+            icon: "fa-solid fa-truck",
+            color: "bg-indigo-500",
+            activeColor: "bg-indigo-600",
+            description: "Your order has been shipped and is on its way",
+          },
+          {
+            status: "delivered",
+            label: "Delivered",
+            icon: "fa-solid fa-check-circle",
+            color: "bg-green-500",
+            activeColor: "bg-green-600",
+            description: "Your order has been delivered",
+          },
+          {
+            status: "payment_pending",
+            label: "Payment Pending",
+            icon: "fa-solid fa-credit-card",
+            color: "bg-yellow-500",
+            activeColor: "bg-yellow-600",
+            description: "Payment will be collected at delivery",
+          },
+          {
+            status: "paid",
+            label: "Payment Completed",
+            icon: "fa-solid fa-money-bill-wave",
+            color: "bg-emerald-500",
+            activeColor: "bg-emerald-600",
+            description: "Payment has been successfully collected",
+          },
+        ];
+      } else {
+        // For online payment orders
+        return [
+          {
+            status: "created",
+            label: "Order Created",
+            icon: "fa-solid fa-cart-plus",
+            color: "bg-gray-500",
+            activeColor: "bg-gray-600",
+            description: "Your order has been placed successfully",
+          },
+          {
+            status: "paid",
+            label: "Payment Confirmed",
+            icon: "fa-solid fa-credit-card",
+            color: "bg-blue-500",
+            activeColor: "bg-blue-600",
+            description: "Payment has been received and confirmed",
+          },
+          {
+            status: "processing",
+            label: "Processing",
+            icon: "fa-solid fa-gear",
+            color: "bg-purple-500",
+            activeColor: "bg-purple-600",
+            description: "Your order is being prepared for shipment",
+          },
+          {
+            status: "shipped",
+            label: "Shipped",
+            icon: "fa-solid fa-truck",
+            color: "bg-indigo-500",
+            activeColor: "bg-indigo-600",
+            description: "Your order has been shipped and is on its way",
+          },
+          {
+            status: "delivered",
+            label: "Delivered",
+            icon: "fa-solid fa-check-circle",
+            color: "bg-green-500",
+            activeColor: "bg-green-600",
+            description: "Your order has been delivered successfully",
+          },
+        ];
+      }
+    },
+    [isCashOnDelivery],
+  );
 
-    return now - delivery > sevenDaysInMs;
-  };
+  // Get current phase index based on order status and payment method
+  const getCurrentPhaseIndex = useCallback(
+    (order) => {
+      const phases = getOrderPhases(order);
+      let currentStatus = order.status;
+
+      // For COD orders, handle payment status specially
+      if (isCashOnDelivery(order)) {
+        if (order.status === "delivered" && order.payment?.status !== "paid") {
+          currentStatus = "payment_pending";
+        } else if (
+          order.payment?.status === "paid" &&
+          order.status === "delivered"
+        ) {
+          currentStatus = "paid";
+        }
+      }
+
+      const index = phases.findIndex((phase) => phase.status === currentStatus);
+      return index !== -1 ? index : 0;
+    },
+    [getOrderPhases, isCashOnDelivery],
+  );
+
+  // Check if order is eligible for review (based on current phase)
+  const isEligibleForReview = useCallback(
+    (order) => {
+      const phases = getOrderPhases(order);
+      const currentIndex = getCurrentPhaseIndex(order);
+      const currentPhase = phases[currentIndex];
+
+      // For COD: eligible when current phase is "paid" (Payment Completed)
+      // For online: eligible when current phase is "delivered"
+      return isCashOnDelivery(order)
+        ? currentPhase?.status === "paid"
+        : currentPhase?.status === "delivered";
+    },
+    [getOrderPhases, getCurrentPhaseIndex, isCashOnDelivery],
+  );
+
+  // Check if review period has expired (7 days after payment completed for COD, or 7 days after delivery for online)
+  const isReviewPeriodExpired = useCallback(
+    (order) => {
+      let reviewStartDate;
+
+      if (isCashOnDelivery(order)) {
+        // For COD: review period starts from payment completion date
+        reviewStartDate =
+          order.payment?.paidAt || order.updatedAt || order.createdAt;
+      } else {
+        // For online: review period starts from delivery date
+        reviewStartDate =
+          order.deliveredAt || order.updatedAt || order.createdAt;
+      }
+
+      if (!reviewStartDate) return true;
+
+      const startDate = new Date(reviewStartDate);
+      const now = new Date();
+      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+
+      return now - startDate > sevenDaysInMs;
+    },
+    [isCashOnDelivery],
+  );
 
   // Check if order should show review button
-  const shouldShowReviewButton = (order) => {
-    if (order.status !== "delivered") return false;
+  const shouldShowReviewButton = useCallback(
+    (order) => {
+      // Get current phase
+      const phases = getOrderPhases(order);
+      const currentIndex = getCurrentPhaseIndex(order);
+      const currentPhase = phases[currentIndex];
 
-    // Check if already reviewed
-    if (reviewedOrders.has(order._id)) return false;
+      // For COD: review button should show when current phase is "paid" (Payment Completed)
+      // For online: review button should show when current phase is "delivered"
+      const isReviewablePhase = isCashOnDelivery(order)
+        ? currentPhase?.status === "paid"
+        : currentPhase?.status === "delivered";
 
-    // Check if review period expired (7 days after delivery)
-    const deliveryDate =
-      order.deliveredAt || order.updatedAt || order.createdAt;
-    if (isReviewPeriodExpired(deliveryDate)) return false;
+      if (!isReviewablePhase) return false;
 
-    return true;
-  };
+      // Check if already reviewed
+      if (reviewedOrders.has(order._id)) return false;
+
+      // Check if review period expired
+      if (isReviewPeriodExpired(order)) return false;
+
+      return true;
+    },
+    [
+      getOrderPhases,
+      getCurrentPhaseIndex,
+      isCashOnDelivery,
+      reviewedOrders,
+      isReviewPeriodExpired,
+    ],
+  );
 
   // Check which products have been reviewed
   const checkReviewedProducts = useCallback(
@@ -251,7 +259,7 @@ export default function MyOrders() {
 
         // For each order, check if its products have been reviewed
         ordersData.forEach((order) => {
-          if (order.status === "delivered" && order.items) {
+          if (isEligibleForReview(order) && order.items) {
             const hasReviewedProduct = order.items.some((item) => {
               return userReviews.some(
                 (review) => review.product?._id === item.product?._id,
@@ -270,8 +278,61 @@ export default function MyOrders() {
         setReviewedOrders(new Set());
       }
     },
-    [token, apiUrl],
+    [token, apiUrl, isEligibleForReview],
   );
+
+  // Status colors mapping for visual status indicators
+  const statusColors = {
+    paid: "bg-success/20 text-success",
+    cancelled: "bg-danger/20 text-danger",
+    pending: "bg-primary/20 text-primary",
+    created: "bg-warning/20 text-warning",
+    processing: "bg-primary/20 text-primary",
+    shipped: "bg-indigo-100 text-indigo-800",
+    delivered: "bg-teal-100 text-teal-800",
+    returned: "bg-pink-100 text-pink-800",
+    payment_pending: "bg-yellow-100 text-yellow-800",
+  };
+
+  // Check if phase is completed
+  const isPhaseCompleted = useCallback(
+    (phaseStatus, order) => {
+      const phaseIndex = getOrderPhases(order).findIndex(
+        (phase) => phase.status === phaseStatus,
+      );
+      const currentIndex = getCurrentPhaseIndex(order);
+      return phaseIndex <= currentIndex;
+    },
+    [getOrderPhases, getCurrentPhaseIndex],
+  );
+
+  // Check if phase is current
+  const isPhaseCurrent = useCallback(
+    (phaseStatus, order) => {
+      let currentStatus = order.status;
+
+      if (isCashOnDelivery(order)) {
+        if (order.status === "delivered" && order.payment?.status !== "paid") {
+          currentStatus = "payment_pending";
+        } else if (
+          order.payment?.status === "paid" &&
+          order.status === "delivered"
+        ) {
+          currentStatus = "paid";
+        }
+      }
+
+      return phaseStatus === currentStatus;
+    },
+    [isCashOnDelivery],
+  );
+
+  // Check notification permission on component mount
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   // Mark an order as reviewed
   const markOrderAsReviewed = (orderId) => {
@@ -349,41 +410,53 @@ export default function MyOrders() {
   };
 
   /**
-   * Check for delivered orders and show notifications
+   * Check for eligible orders and show notifications
    */
   useEffect(() => {
     if (orders.length === 0) return;
 
-    const newlyDeliveredOrders = orders.filter(
+    const newlyEligibleOrders = orders.filter(
       (order) =>
-        order.status === "delivered" && !notifiedDeliveries.has(order._id),
+        isEligibleForReview(order) && !notifiedDeliveries.has(order._id),
     );
 
-    newlyDeliveredOrders.forEach((order) => {
-      toast.success(
-        `🎉 Order #${order._id.slice(
-          -6,
-        )} delivered! You can now review the products.`,
-        {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          toastId: `order-delivered-${order._id}`,
-        },
-      );
+    newlyEligibleOrders.forEach((order) => {
+      const message = isCashOnDelivery(order)
+        ? `🎉 Payment completed for order #${order._id.slice(
+            -6,
+          )}! You can now review the products.`
+        : `🎉 Order #${order._id.slice(
+            -6,
+          )} delivered! You can now review the products.`;
+
+      toast.success(message, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        toastId: `order-eligible-${order._id}`,
+      });
 
       // Show system notification if permission granted
       if ("Notification" in window && Notification.permission === "granted") {
         try {
-          const notification = new Notification("🎉 Order Delivered!", {
-            body: `Order #${order._id.slice(
-              -6,
-            )} has been delivered. Click to review products.`,
+          const notificationTitle = isCashOnDelivery(order)
+            ? "🎉 Payment Completed!"
+            : "🎉 Order Delivered!";
+          const notificationBody = isCashOnDelivery(order)
+            ? `Payment for order #${order._id.slice(
+                -6,
+              )} completed. Click to review products.`
+            : `Order #${order._id.slice(
+                -6,
+              )} has been delivered. Click to review products.`;
+
+          const notification = new Notification(notificationTitle, {
+            body: notificationBody,
             icon: "/favicon.ico",
-            tag: `order-delivered-${order._id}`,
+            tag: `order-eligible-${order._id}`,
           });
 
           notification.onclick = () => {
@@ -400,7 +473,7 @@ export default function MyOrders() {
 
       setNotifiedDeliveries((prev) => new Set(prev).add(order._id));
     });
-  }, [orders, notifiedDeliveries]);
+  }, [orders, notifiedDeliveries, isEligibleForReview, isCashOnDelivery]);
 
   // Save notified deliveries to localStorage
   useEffect(() => {
@@ -467,39 +540,55 @@ export default function MyOrders() {
   };
 
   // Get days remaining for review
-  const getDaysRemainingForReview = (deliveryDate) => {
-    if (!deliveryDate) return 0;
+  const getDaysRemainingForReview = useCallback(
+    (order) => {
+      let reviewStartDate;
 
-    const delivery = new Date(deliveryDate);
-    const now = new Date();
-    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-    const timePassed = now - delivery;
-    const daysRemaining = Math.ceil(
-      (sevenDaysInMs - timePassed) / (24 * 60 * 60 * 1000),
-    );
+      if (isCashOnDelivery(order)) {
+        reviewStartDate =
+          order.payment?.paidAt || order.updatedAt || order.createdAt;
+      } else {
+        reviewStartDate =
+          order.deliveredAt || order.updatedAt || order.createdAt;
+      }
 
-    return Math.max(0, daysRemaining);
-  };
+      if (!reviewStartDate) return 0;
+
+      const startDate = new Date(reviewStartDate);
+      const now = new Date();
+      const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+      const timePassed = now - startDate;
+      const daysRemaining = Math.ceil(
+        (sevenDaysInMs - timePassed) / (24 * 60 * 60 * 1000),
+      );
+
+      return Math.max(0, daysRemaining);
+    },
+    [isCashOnDelivery],
+  );
 
   // Get payment status text for COD orders
-  const getPaymentStatusText = (order) => {
-    if (!isCashOnDelivery(order)) return null;
+  const getPaymentStatusText = useCallback(
+    (order) => {
+      if (!isCashOnDelivery(order)) return null;
 
-    if (order.payment?.status === "paid") {
-      return {
-        text: "Payment Completed",
-        color: "text-green-600",
-        icon: "fa-solid fa-check-circle",
-      };
-    } else if (order.status === "delivered") {
-      return {
-        text: "Awaiting Payment",
-        color: "text-yellow-600",
-        icon: "fa-solid fa-clock",
-      };
-    }
-    return null;
-  };
+      if (order.payment?.status === "paid") {
+        return {
+          text: "Payment Completed",
+          color: "text-green-600",
+          icon: "fa-solid fa-check-circle",
+        };
+      } else if (order.status === "delivered") {
+        return {
+          text: "Awaiting Payment",
+          color: "text-yellow-600",
+          icon: "fa-solid fa-clock",
+        };
+      }
+      return null;
+    },
+    [isCashOnDelivery],
+  );
 
   // Phase tracker component
   const OrderPhaseTracker = ({ order }) => {
@@ -744,9 +833,7 @@ export default function MyOrders() {
           {orders.map((order) => {
             const showReviewBtn = shouldShowReviewButton(order);
             const isReviewed = reviewedOrders.has(order._id);
-            const deliveryDate =
-              order.deliveredAt || order.updatedAt || order.createdAt;
-            const daysRemaining = getDaysRemainingForReview(deliveryDate);
+            const daysRemaining = getDaysRemainingForReview(order);
             const phases = getOrderPhases(order);
             const currentIndex = getCurrentPhaseIndex(order);
             const currentPhase = phases[currentIndex];
@@ -907,7 +994,7 @@ export default function MyOrders() {
                         </Btn>
                       )}
 
-                      {order.status === "delivered" && isReviewed && (
+                      {isEligibleForReview(order) && isReviewed && (
                         <Btn
                           variant="outline"
                           onClick={(e) => handleSeeReview(order, e)}
@@ -921,7 +1008,7 @@ export default function MyOrders() {
                       )}
                     </div>
 
-                    {/* Track Order button - separate row or column based on screen size */}
+                    {/* Track Order button */}
                     <div className="flex xs:flex-none">
                       <Btn
                         variant="outline"
@@ -1052,18 +1139,17 @@ export default function MyOrders() {
                       </Btn>
                     )}
 
-                  {selectedOrder.status === "delivered" &&
-                    shouldShowReviewButton(selectedOrder) && (
-                      <Btn
-                        variant="success"
-                        onClick={() => handleWriteReview(selectedOrder)}
-                        className="flex-1 py-3 rounded-lg"
-                      >
-                        <i className="fa-solid fa-star mr-2"></i> Write Review
-                      </Btn>
-                    )}
+                  {shouldShowReviewButton(selectedOrder) && (
+                    <Btn
+                      variant="success"
+                      onClick={() => handleWriteReview(selectedOrder)}
+                      className="flex-1 py-3 rounded-lg"
+                    >
+                      <i className="fa-solid fa-star mr-2"></i> Write Review
+                    </Btn>
+                  )}
 
-                  {selectedOrder.status === "delivered" &&
+                  {isEligibleForReview(selectedOrder) &&
                     reviewedOrders.has(selectedOrder._id) && (
                       <Btn
                         variant="outline"
@@ -1104,7 +1190,7 @@ export default function MyOrders() {
                           <div className="text-gray-500 text-sm mt-1">
                             Qty: {item.qty} × ৳{item.price.toLocaleString()}
                           </div>
-                          {selectedOrder.status === "delivered" && (
+                          {isEligibleForReview(selectedOrder) && (
                             <div className="mt-2">
                               {reviewedOrders.has(selectedOrder._id) ? (
                                 <button
@@ -1125,10 +1211,8 @@ export default function MyOrders() {
                                   <i className="fa-solid fa-eye mr-1"></i> See
                                   Review
                                 </button>
-                              ) : getDaysRemainingForReview(
-                                  selectedOrder.deliveredAt ||
-                                    selectedOrder.updatedAt,
-                                ) > 0 ? (
+                              ) : getDaysRemainingForReview(selectedOrder) >
+                                0 ? (
                                 <button
                                   onClick={() => {
                                     const slug =
