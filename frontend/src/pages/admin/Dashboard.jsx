@@ -43,7 +43,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen font-urbanist">
       {/* Desktop Sidebar */}
       <aside
-        className="hidden md:flex flex-col w-16 group hover:w-56 transition-all duration-300 ease-out bg-[#0A0A0A] text-primarybg py-6 px-2 overflow-hidden select-none"
+        className="hidden md:flex flex-col w-16 group hover:w-56 transition-all duration-300 ease-out bg-classic text-primarybg py-6 px-2 overflow-hidden select-none"
         aria-label="Sidebar"
       >
         <div className="flex flex-col gap-2">
@@ -89,7 +89,7 @@ export default function Dashboard() {
 
       {/* Mobile Menu Button */}
       <button
-        className="md:hidden fixed top-1/2 z-50 -translate-y-1/2 rounded-r py-1.5 px-0.5 bg-[#0A0A0A] text-primarybg"
+        className="md:hidden fixed top-1/2 z-50 -translate-y-1/2 rounded-r py-1.5 px-0.5 bg-classic text-primarybg"
         aria-label="Open menu"
         onClick={() => setOpenMobileMenu(true)}
       >
@@ -99,7 +99,7 @@ export default function Dashboard() {
       {/* Mobile overlay */}
       {openMobileMenu && (
         <div
-          className="md:hidden fixed inset-0 bg-[#0A0A0A]/60 z-40"
+          className="md:hidden fixed inset-0 bg-classic/60 z-40"
           onClick={() => setOpenMobileMenu(false)}
           aria-hidden="true"
         />
@@ -107,7 +107,7 @@ export default function Dashboard() {
 
       {/* Mobile off-canvas menu */}
       <nav
-        className={`md:hidden fixed top-0 left-0 h-full w-64 bg-[#0A0A0A] text-primarybg z-50 transform transition-transform duration-300 ${
+        className={`md:hidden fixed top-0 left-0 h-full w-64 bg-classic text-primarybg z-50 transform transition-transform duration-300 ${
           openMobileMenu ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Mobile menu"

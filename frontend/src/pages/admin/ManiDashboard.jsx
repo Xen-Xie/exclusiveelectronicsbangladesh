@@ -479,7 +479,7 @@ function MainDashboard() {
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0A0A0A]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-classic"></div>
       </div>
     );
 
@@ -874,7 +874,7 @@ function MainDashboard() {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 ">
-          <Btn size="sm" className="text-[#0A0A0A]" variant="outline">
+          <Btn size="sm" className="text-classic" variant="outline">
             <i className="fa-solid fa-plus mr-2"></i>
             <Link to="/admin/add-product">Add Product</Link>
           </Btn>
