@@ -17,43 +17,44 @@ function Navigation() {
   const { user, logout } = useContext(AuthContext);
   const [openMenu, setOpenMenu] = useState(false);
   const { cartCount } = useCart();
+
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
   return (
-    <nav className="w-full border-b border-bordered bg-primarybg px-4 sm:px-6 font-inter py-3 md:py-4">
-      <div className="flex justify-between items-center gap-3 max-w-[1400px] mx-auto h-16">
-        {/* Logo Section */}
-        <Link to="/">
-          <img
-            src="/mainLogo.png"
-            alt="Logo"
-            className="h-30 xs:h-35 md:h-40 lg:h-45 object-contain"
-          />
-        </Link>
+    <nav className="w-full bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100 font-urbanist">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 md:h-20">
+          {/* Logo Section */}
+          <Link to="/" className="shrink-0">
+            <img
+              src="/DropOre.svg"
+              alt="Dropore"
+              className="h-25 sm:h-30 md:h-35 w-auto object-contain"
+            />
+          </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:block">
-          <ul className="flex gap-6 items-center">
-            {navItems.map((i, index) => (
-              <li
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex md:items-center md:gap-8">
+            {navItems.map((item, index) => (
+              <Link
                 key={index}
-                className="relative after:block after:w-0 after:h-0.5 after:bg-current after:transition-all after:duration-300 hover:after:w-full hover:text-primary transition-all duration-300 text-base md:text-lg lg:text-xl"
+                to={item.path}
+                className="text-gray-700 hover:text-primary font-medium transition-colors duration-200 relative group"
               >
-                <Link to={i.path}>{i.name}</Link>
-              </li>
+                {item.name}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+              </Link>
             ))}
-          </ul>
-        </div>
+          </div>
 
-        {/* Desktop Cart & Button / Profile */}
-        <div className="hidden md:flex gap-4 items-center relative">
-          {/* Cart */}
-          <div className="relative">
-            <Link to="/checkout">
-              <i className="fa-solid fa-cart-arrow-down text-2xl hover:text-secondary/85 transition-all duration-300"></i>
+          {/* Desktop Right Section */}
+          <div className="hidden md:flex md:items-center md:gap-6">
+            {/* Cart Icon */}
+            <Link to="/checkout" className="relative">
+              <i className="fa-solid fa-cart-shopping text-xl text-gray-700 hover:text-primary transition-colors"></i>
               <AnimatePresence>
                 {cartCount > 0 && (
                   <motion.span
@@ -61,62 +62,100 @@ function Navigation() {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    key={cartCount}
-                    className="absolute -top-2 -right-2 bg-danger text-primarybg text-xs px-1.5 py-0.5 rounded-full"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
                   >
                     {cartCount}
                   </motion.span>
                 )}
               </AnimatePresence>
             </Link>
+
+            {/* User Section */}
+            {!user ? (
+              <div className="flex items-center gap-4">
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-primary font-medium transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/sign-up"
+                  className="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-all shadow-sm hover:shadow-md"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            ) : (
+              <div className="relative group cusror-pointer">
+                <button className="flex items-center gap-2 focus:outline-none">
+                  <div className="w-8 h-8 bg-linear-to-r from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-semibold">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                  <i className="fa-solid fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform"></i>
+                </button>
+
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 cursor-pointer">
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-t-lg"
+                  >
+                    <i className="fa-solid fa-user text-gray-400"></i>
+                    <span>My Profile</span>
+                  </Link>
+                  <Link
+                    to="/profile/orders"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <i className="fa-solid fa-box text-gray-400"></i>
+                    <span>My Orders</span>
+                  </Link>
+                  <Link
+                    to="/profile/wishlist"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <i className="fa-solid fa-heart text-gray-400"></i>
+                    <span>Wishlist</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors w-full rounded-b-lg border-t border-gray-100"
+                  >
+                    <i className="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Sign Up or Profile */}
-          {!user ? (
-            <Link to="/sign-up" className="text-lg lg:text-xl">
-              Sign Up
-            </Link>
-          ) : (
-            <Link to="/profile">
-              <i className="fa-solid fa-user-circle text-3xl hover:text-secondary/85 transition-all duration-300 mb-2"></i>
-            </Link>
-          )}
-        </div>
-
-        {/* Mobile Cart & Hamburger */}
-        <div className="flex md:hidden gap-4 items-center relative">
-          {/* Mobile Cart */}
-          <div className="relative">
-            <Link to="/checkout">
-              <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
+          {/* Mobile Menu Button */}
+          <div className="flex md:hidden items-center gap-4">
+            {/* Mobile Cart */}
+            <Link to="/checkout" className="relative">
+              <i className="fa-solid fa-cart-shopping text-xl text-gray-700"></i>
               <AnimatePresence>
                 {cartCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    key={cartCount}
-                    className="absolute -top-2 -right-2 bg-danger text-white text-xs px-1.5 py-0.5 rounded-full"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full"
                   >
                     {cartCount}
                   </motion.span>
                 )}
               </AnimatePresence>
             </Link>
+
+            <button
+              onClick={() => setOpenMenu(true)}
+              className="text-gray-700 hover:text-primary"
+            >
+              <i className="fa-solid fa-bars text-2xl"></i>
+            </button>
           </div>
-
-          {/* Mobile User Icon only when logged out */}
-          {!user && (
-            <Link to="/sign-up">
-              <i className="fa-solid fa-user text-2xl"></i>
-            </Link>
-          )}
-
-          {/* Hamburger Icon */}
-          <button onClick={() => setOpenMenu((prev) => !prev)}>
-            <i className="fa-solid fa-bars text-2xl"></i>
-          </button>
         </div>
       </div>
 
@@ -127,69 +166,119 @@ function Navigation() {
             {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
               onClick={() => setOpenMenu(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-lg z-40"
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
             />
 
             {/* Sliding Menu */}
             <motion.div
               initial={{ x: "100%" }}
-              animate={{ x: "0%" }}
+              animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="md:hidden fixed top-0 right-0 h-full w-[75%] xs:w-[70%] sm:w-[50%] bg-primarybg shadow-xl border-l border-bordered p-6 z-50 flex flex-col"
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 md:hidden"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setOpenMenu(false)}
-                className="text-2xl mb-6 self-end"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-
-              <ul className="space-y-4 font-inter text-lg">
-                {navItems.map((i, index) => (
-                  <li
-                    key={index}
-                    className="border-b border-bordered pb-2 last:border-0"
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                  <button
+                    onClick={() => setOpenMenu(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                   >
-                    <Link to={i.path} onClick={() => setOpenMenu(false)}>
-                      {i.name}
-                    </Link>
-                  </li>
-                ))}
+                    <i className="fa-solid fa-xmark text-xl"></i>
+                  </button>
+                </div>
 
-                {/* Mobile Sign Up or Profile */}
-                <li className="pt-2">
-                  {!user ? (
-                    <Link to="/sign-up" onClick={() => setOpenMenu(false)}>
-                      Sign Up
-                    </Link>
-                  ) : (
-                    <Link to="/profile" onClick={() => setOpenMenu(false)}>
-                      <i className="fa-solid fa-user-circle text-2xl"></i>{" "}
-                      Account
-                    </Link>
-                  )}
-                </li>
-              </ul>
-              {user && (
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setOpenMenu(false);
-                  }}
-                  className="flex items-center gap-4 w-full rounded-lg text-left mt-auto pt-4"
-                >
-                  <div className="w-8 flex items-center justify-center">
-                    <i className="fa-solid fa-right-from-bracket text-lg"></i>
+                {/* User Info (if logged in) */}
+                {user && (
+                  <div className="p-4 bg-linear-to-r from-primary/5 to-primary/10 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-linear-to-r from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-semibold">
+                        {user.name?.charAt(0).toUpperCase() || "U"}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800">{user.name}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm font-medium">Logout</span>
-                </button>
-              )}
+                )}
+
+                {/* Navigation Links */}
+                <div className="flex-1 py-4">
+                  {navItems.map((item, index) => (
+                    <Link
+                      key={index}
+                      to={item.path}
+                      onClick={() => setOpenMenu(false)}
+                      className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
+                    >
+                      <span className="font-medium">{item.name}</span>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Footer Actions */}
+                <div className="border-t border-gray-100 p-4 space-y-2">
+                  {!user ? (
+                    <>
+                      <Link
+                        to="/login"
+                        onClick={() => setOpenMenu(false)}
+                        className="block w-full text-center px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        to="/sign-up"
+                        onClick={() => setOpenMenu(false)}
+                        className="block w-full text-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      >
+                        Sign Up
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/profile"
+                        onClick={() => setOpenMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <i className="fa-solid fa-user w-5"></i>
+                        <span>My Profile</span>
+                      </Link>
+                      <Link
+                        to="/profile/orders"
+                        onClick={() => setOpenMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <i className="fa-solid fa-box w-5"></i>
+                        <span>My Orders</span>
+                      </Link>
+                      <Link
+                        to="/profile/wishlist"
+                        onClick={() => setOpenMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <i className="fa-solid fa-heart w-5"></i>
+                        <span>Wishlist</span>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setOpenMenu(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <i className="fa-solid fa-right-from-bracket w-5"></i>
+                        <span>Logout</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </motion.div>
           </>
         )}
