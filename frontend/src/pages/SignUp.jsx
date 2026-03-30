@@ -3,7 +3,11 @@ import Btn from "../components/Common/Btn";
 import { Link } from "react-router";
 import axios from "axios";
 import { useNavigate } from "react-router";
-import { signInWithPopup } from "firebase/auth";
+import {
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth, provide } from "../firebase/firebase";
 import { AuthContext } from "../auth/AuthContext";
 import toast from "react-hot-toast";
@@ -22,6 +26,8 @@ function SignUp() {
   const [termsError, setTermsError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
 
   const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
@@ -81,7 +87,7 @@ function SignUp() {
     }
   };
 
-  // Form Submit Validation
+  // Form Submit Validation with Firebase Email Verification
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormLoading(true);
@@ -93,6 +99,11 @@ function SignUp() {
     setTermsError("");
 
     let valid = true;
+
+    if (!name.trim()) {
+      toast.error("Name is required");
+      valid = false;
+    }
 
     if (!email) {
       setEmailError("Email is required");
@@ -120,56 +131,143 @@ function SignUp() {
     }
 
     try {
-      console.log("ending signup request:", { name, email, agreeToTerms });
+      // 1. Create user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const firebaseUser = userCredential.user;
 
+      // 2. Send email verification
+      await sendEmailVerification(firebaseUser);
+
+      // 3. Store verification info
+      setVerificationEmail(email);
+      setVerificationSent(true);
+
+      // 4. Create user in your backend
       const res = await axios.post(`${apiUrl}/api/user/signup`, {
         name,
         email,
         password,
         agreeToTerms: agreeToTerms || true,
-        phoneNumber: "", // Add required empty fields
+        phoneNumber: "",
         address: "",
+        firebaseUid: firebaseUser.uid,
+        emailVerified: false,
       });
 
       console.log("Signup successful:", res.data);
 
-      toast.success("Account created successfully! Please login.");
-      navigate("/login");
+      toast.success(
+        "Verification email sent! Please check your inbox and verify your email address.",
+        {
+          duration: 5000,
+          icon: "📧",
+        },
+      );
+
+      // Don't navigate immediately - wait for verification
+      // Show verification screen instead
     } catch (error) {
       console.error("Signup error details:", {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message,
+        code: error.code,
       });
 
-      // Extract error message from backend
+      // Handle Firebase errors
       let errorMessage = "Sign Up failed. Please try again.";
 
-      // Handle different error formats
-      if (error.response?.data?.message) {
+      if (error.code === "auth/email-already-in-use") {
+        errorMessage = "Email already in use. Please try logging in instead.";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password should be at least 6 characters.";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address.";
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.status === "fail") {
-        errorMessage = error.response.data.message || "Signup failed";
       }
 
-      // Show the actual error message to user
       toast.error(errorMessage);
 
-      // Also highlight the specific field
+      // Highlight the specific field
       const errorLower = errorMessage.toLowerCase();
-      if (errorLower.includes("email") || errorLower.includes("duplicate")) {
+      if (errorLower.includes("email")) {
         setEmailError(errorMessage);
       } else if (errorLower.includes("password")) {
         setPassError(errorMessage);
-      } else if (errorLower.includes("terms") || errorLower.includes("agree")) {
+      } else if (errorLower.includes("terms")) {
         setTermsError(errorMessage);
-      } else {
-        setTermsError(errorMessage); // General error in terms area
       }
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  // Resend verification email
+  const resendVerificationEmail = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await sendEmailVerification(user);
+        toast.success("Verification email resent! Please check your inbox.", {
+          icon: "📧",
+        });
+      } else {
+        toast.error(
+          "Unable to resend verification. Please try signing up again.",
+        );
+      }
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      toast.error("Failed to resend verification email. Please try again.");
+    }
+  };
+
+  // Check verification status
+  const checkVerificationStatus = async () => {
+    try {
+      // Show loading state
+      toast.loading("Checking verification status...");
+
+      // Reload Firebase user to get latest verification status
+      await auth.currentUser?.reload();
+
+      if (auth.currentUser?.emailVerified) {
+        // Call your backend to update emailVerified status
+        const response = await axios.post(`${apiUrl}/api/user/verify-email`, {
+          email: verificationEmail,
+          firebaseUid: auth.currentUser?.uid,
+        });
+
+        if (response.data.status === "success") {
+          toast.dismiss();
+          toast.success("Email verified! Redirecting to login...");
+          setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        } else {
+          toast.dismiss();
+          toast.error(
+            response.data.message || "Verification failed. Please try again.",
+          );
+        }
+      } else {
+        toast.dismiss();
+        toast.error(
+          "Email not verified yet. Please check your inbox and click the verification link.",
+        );
+      }
+    } catch (error) {
+      console.error("Verification check error:", error);
+      toast.dismiss();
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to verify email. Please try again.",
+      );
     }
   };
 
@@ -199,36 +297,29 @@ function SignUp() {
         name: user.displayName || name || user.email.split("@")[0],
         agreeToTerms: true,
         profilePicture: user.photoURL,
+        emailVerified: user.emailVerified,
       };
 
       const res = await axios.post(`${apiUrl}/api/user/google`, userData);
 
-      // 4. Handle success
       if (res.data.status === "success") {
         const token = res.data.token;
-        const userData = res.data.data || res.data.user;
+        const userDataRes = res.data.data || res.data.user;
 
-        // Store token and user data
         localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("user", JSON.stringify(userDataRes));
 
-        // Update toast to success
         toast.success(
           res.data.message || "🎉 Successfully signed up with Google!",
-          {
-            id: loadingToast,
-          }
+          { id: loadingToast },
         );
 
-        // Use the login function from AuthContext
         if (login) {
           login(token, () => {
             navigate("/");
           });
         } else {
-          // Fallback if AuthContext not available
           navigate("/");
-          // Trigger auth state update for navbar
           window.dispatchEvent(new CustomEvent("authStateChanged"));
         }
       } else {
@@ -239,17 +330,12 @@ function SignUp() {
 
       let errorMessage = "Google Sign Up failed. Please try again.";
 
-      // Handle specific Firebase errors
       if (error.code === "auth/popup-closed-by-user") {
-        errorMessage = "Signup cancelled. Please try again.";
-      } else if (error.code === "auth/cancelled-popup-request") {
         errorMessage = "Signup cancelled. Please try again.";
       } else if (error.code === "auth/popup-blocked") {
         errorMessage = "Popup was blocked. Please allow popups and try again.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
       }
 
       toast.error(errorMessage);
@@ -257,6 +343,71 @@ function SignUp() {
       setGoogleLoading(false);
     }
   };
+
+  // Show verification screen if verification email was sent
+  if (verificationSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg text-center">
+          <div className="flex justify-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+              <i className="fa-regular fa-envelope text-4xl text-green-600"></i>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900">
+            Verify Your Email
+          </h2>
+
+          <p className="text-gray-600">
+            We've sent a verification email to:
+            <br />
+            <span className="font-semibold text-primary">
+              {verificationEmail}
+            </span>
+          </p>
+
+          <p className="text-sm text-gray-500">
+            Please check your inbox and click the verification link to activate
+            your account. If you don't see the email, check your spam folder.
+          </p>
+
+          <div className="space-y-3">
+            <Btn
+              variant="primary"
+              onClick={checkVerificationStatus}
+              className="w-full py-2 px-4 rounded-lg font-medium transition-colors"
+            >
+              I've Verified My Email
+            </Btn>
+
+            <Btn
+              variant="secondary"
+              onClick={resendVerificationEmail}
+              className="w-full text-secondary py-2 px-4 rounded-lg font-medium transition-colors"
+            >
+              Resend Verification Email
+            </Btn>
+
+            <Link
+              to="/login"
+              className="block text-sm text-primary hover:underline mt-2"
+            >
+              Back to Login
+            </Link>
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-xs text-blue-600">
+              <i className="fa-regular fa-lightbulb mr-1"></i>
+              Tip: After verifying your email, click the "I've Verified My
+              Email" button to continue.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-container max-w-md mx-2 xs:mx-3 md:mx-auto mt-10 p-6 rounded-2xl shadow-lg font-urbanist mb-8">
@@ -276,6 +427,7 @@ function SignUp() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="border px-3 py-1.5 rounded-3xl outline-none transition border-secondary focus:border-primary focus:ring-2 focus:ring-primary/20"
+              required
             />
           </div>
 
@@ -284,7 +436,6 @@ function SignUp() {
             <label htmlFor="Email" className="text-lg mx-1">
               Email address
             </label>
-
             <input
               type="email"
               placeholder="Enter Your Email"
@@ -298,8 +449,8 @@ function SignUp() {
                     : "border-secondary focus:border-primary"
                 }
               `}
+              required
             />
-
             {emailError && (
               <p className="text-red-600 text-sm mx-1">{emailError}</p>
             )}
@@ -310,7 +461,6 @@ function SignUp() {
             <label htmlFor="password" className="text-lg mx-1">
               Password
             </label>
-
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -325,8 +475,8 @@ function SignUp() {
                       : "border-secondary focus:border-primary"
                   }
                 `}
+                required
               />
-
               <button
                 type="button"
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-primary hover:text-primary/80"
@@ -340,7 +490,6 @@ function SignUp() {
                 ></i>
               </button>
             </div>
-
             {passError && (
               <p className="text-red-600 text-sm mx-1">{passError}</p>
             )}
@@ -351,7 +500,6 @@ function SignUp() {
             <label htmlFor="confirmPassword" className="text-lg mx-1">
               Confirm Password
             </label>
-
             <input
               type="password"
               placeholder="Confirm Your Password"
@@ -365,8 +513,8 @@ function SignUp() {
                     : "border-secondary focus:border-primary"
                 }
               `}
+              required
             />
-
             {confirmError && (
               <p className="text-red-600 text-sm mx-1">{confirmError}</p>
             )}
