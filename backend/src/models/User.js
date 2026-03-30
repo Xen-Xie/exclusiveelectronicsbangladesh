@@ -30,6 +30,22 @@ const userSchema = new Schema(
       match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"],
       index: true,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    firebaseUid: {
+      type: String,
+      sparse: true,
+      unique: false,
+    },
+    verificationToken: {
+      type: String,
+      sparse: true,
+    },
+    verificationTokenExpires: {
+      type: Date,
+    },
     password: {
       type: String,
       // Only validate password for non-Google users

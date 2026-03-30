@@ -7,6 +7,8 @@ import {
   updateUser,
   deleteUser,
   toggleUserRole,
+  verifyEmail,
+  resendVerification,
 } from "../controllers/userController.js";
 import { googleAuth } from "../controllers/googleAuth.js";
 import { authenticateToken, isAdmin } from "../middleware/authorization.js";
@@ -18,6 +20,10 @@ router.post("/signup", createUser);
 // Manual login
 router.post("/login", loginUser);
 router.put("/update", authenticateToken, updateUser);
+
+// Email verification
+router.post("/verify-email", verifyEmail);
+router.post("/resend-verification", resendVerification);
 
 // Google OAuth login/signup
 router.post("/google", googleAuth);

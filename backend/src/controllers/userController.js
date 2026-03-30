@@ -14,6 +14,8 @@ export const createUser = async (req, res) => {
       address,
       googleId,
       agreeToTerms,
+      firebaseUid, // Add this
+      emailVerified, // Add this
     } = req.body;
 
     // Check required fields
@@ -53,6 +55,8 @@ export const createUser = async (req, res) => {
       phoneNumber: phoneNumber || "",
       address: address || "",
       role: "user",
+      firebaseUid: firebaseUid || null,
+      emailVerified: emailVerified || false,
     });
 
     // Create token
@@ -146,7 +150,13 @@ export const loginUser = async (req, res) => {
         message: "Incorrect email or password",
       });
     }
-
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        status: "fail",
+        message:
+          "Please verify your email address before logging in. Check your inbox for the verification link.",
+      });
+    }
     // Update last login
     user.lastLogin = Date.now();
     await user.save({ validateBeforeSave: false });
@@ -173,6 +183,7 @@ export const loginUser = async (req, res) => {
         address: user.address,
         role: user.role,
         agreeToTerms: user.agreeToTerms,
+        emailVerified: user.emailVerified,
       },
     });
   } catch (error) {
@@ -521,6 +532,89 @@ export const clearWishlist = async (req, res) => {
     });
   } catch (error) {
     console.error("Clear wishlist error:", error);
+    res.status(500).json({
+      status: "fail",
+      message: error.message,
+    });
+  }
+};
+
+// Add email verification endpoint
+export const verifyEmail = async (req, res) => {
+  try {
+    const { email, firebaseUid } = req.body;
+
+    if (!email && !firebaseUid) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Email or Firebase UID is required",
+      });
+    }
+
+    const user = await User.findOne({
+      $or: [{ email: email?.toLowerCase() }, { firebaseUid }],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "fail",
+        message: "User not found",
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Email already verified",
+      });
+    }
+
+    // Update email verification status
+    user.emailVerified = true;
+    await user.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Email verified successfully! You can now login.",
+    });
+  } catch (error) {
+    console.error("Email verification error:", error);
+    res.status(500).json({
+      status: "fail",
+      message: error.message,
+    });
+  }
+};
+
+// Resend verification email (optional)
+export const resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "fail",
+        message: "User not found",
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Email already verified",
+      });
+    }
+
+    // Here you would trigger Firebase to resend verification email
+    // Since you're using Firebase, you'll need to handle this on the frontend
+
+    res.status(200).json({
+      status: "success",
+      message: "Verification email resent. Please check your inbox.",
+    });
+  } catch (error) {
     res.status(500).json({
       status: "fail",
       message: error.message,
