@@ -31,6 +31,7 @@ import ErrorPage from "./pages/ErrorPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import WhyShopWithUs from "./pages/WhyShopWithUS";
+import ReturnPolicy from "./components/ReturnPolicy";
 
 function App() {
   return (
@@ -56,7 +57,8 @@ function App() {
           <Route path="terms-and-conditions" element={<TermsandConditions />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} /> 
           <Route path="cookie-policy" element={<CookiePolicy />} />
-          <Route path="why-shop-with-us" element={<WhyShopWithUs />} /> 
+          <Route path="why-shop-with-us" element={<WhyShopWithUs />} />
+          <Route path="return-policy" element={<ReturnPolicy />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
         </Route>
         <Route path="*" element={<ErrorPage />} />
