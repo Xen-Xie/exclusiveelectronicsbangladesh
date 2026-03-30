@@ -30,6 +30,7 @@ import BannerManager from "./pages/admin/BannerManager";
 import ErrorPage from "./pages/ErrorPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
+import WhyShopWithUs from "./pages/WhyShopWithUS";
 
 function App() {
   return (
@@ -54,7 +55,8 @@ function App() {
           <Route path="payment-failed" element={<PaymentFailed />} />
           <Route path="terms-and-conditions" element={<TermsandConditions />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} /> 
-          <Route path="cookie-policy" element={<CookiePolicy />} /> 
+          <Route path="cookie-policy" element={<CookiePolicy />} />
+          <Route path="why-shop-with-us" element={<WhyShopWithUs />} /> 
           <Route path="/category/:categoryName" element={<CategoryPage />} />
         </Route>
         <Route path="*" element={<ErrorPage />} />
