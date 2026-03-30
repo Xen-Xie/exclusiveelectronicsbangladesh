@@ -17,7 +17,7 @@ const uploadToCloudinary = (buffer) => {
         } else {
           reject(error);
         }
-      }
+      },
     );
 
     streamifier.createReadStream(buffer).pipe(stream);
@@ -39,13 +39,23 @@ export const createProduct = async (req, res) => {
       tags,
       featured,
       onSale,
+      quickInfo,
     } = req.body;
-
+    let parsedQuickInfo = {};
+    if (quickInfo) {
+      try {
+        parsedQuickInfo =
+          typeof quickInfo === "string" ? JSON.parse(quickInfo) : quickInfo;
+      } catch (e) {
+        console.error("Failed to parse quickInfo:", e);
+        parsedQuickInfo = {};
+      }
+    }
     let images = [];
 
     if (req.files && req.files.length > 0) {
       const uploadPromises = req.files.map((file) =>
-        uploadToCloudinary(file.buffer)
+        uploadToCloudinary(file.buffer),
       );
 
       images = await Promise.all(uploadPromises);
@@ -76,6 +86,7 @@ export const createProduct = async (req, res) => {
       featured: featured === "true" || featured === true,
       onSale: onSale === "true" || onSale === true,
       images: images,
+      quickInfo: parsedQuickInfo,
     });
 
     await newProduct.save();
@@ -182,6 +193,7 @@ export const updateProduct = async (req, res) => {
       tags,
       featured,
       onSale,
+      quickInfo,
     } = req.body;
 
     // Get the current product
@@ -248,7 +260,20 @@ export const updateProduct = async (req, res) => {
       }
       updateData.tags = parsedTags;
     }
-
+    // Handle quickInfo - Add this
+    if (quickInfo !== undefined) {
+      let parsedQuickInfo = {};
+      if (typeof quickInfo === "string") {
+        try {
+          parsedQuickInfo = JSON.parse(quickInfo);
+        } catch (e) {
+          console.error("Failed to parse quickInfo:", e);
+        }
+      } else {
+        parsedQuickInfo = quickInfo;
+      }
+      updateData.quickInfo = parsedQuickInfo;
+    }
     // findByIdAndUpdate with runValidators: FALSE to bypass schema validation
     const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,

@@ -105,6 +105,30 @@ const productSchema = new mongoose.Schema({
       5: { type: Number, default: 0 },
     },
   },
+  quickInfo: {
+    freeShipping: {
+      type: Boolean,
+      default: true,
+    },
+    returnPolicy: {
+      type: String,
+      enum: ["30-day", "7-day", "14-day", "non-returnable"],
+      default: "30-day",
+    },
+    support: {
+      type: String,
+      enum: ["24/7", "business-hours", "email-only"],
+      default: "24/7",
+    },
+    deliveryTime: {
+      type: String,
+      default: "3-5 business days",
+    },
+    warranty: {
+      type: String,
+      default: "1 year",
+    },
+  },
 });
 
 // Pre-save middleware to update timestamps and handle slug/sale logic
