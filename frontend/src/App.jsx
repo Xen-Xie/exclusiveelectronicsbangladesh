@@ -33,6 +33,8 @@ import CookiePolicy from "./pages/CookiePolicy";
 import WhyShopWithUs from "./pages/WhyShopWithUS";
 import ReturnPolicy from "./components/ReturnPolicy";
 import Support from "./components/Spport";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -61,6 +63,8 @@ function App() {
           <Route path="why-shop-with-us" element={<WhyShopWithUs />} />
           <Route path="return-policy" element={<ReturnPolicy />} />
           <Route path="support" element={<Support />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
         </Route>
         <Route path="*" element={<ErrorPage />} />
