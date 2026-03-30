@@ -32,6 +32,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import WhyShopWithUs from "./pages/WhyShopWithUS";
 import ReturnPolicy from "./components/ReturnPolicy";
+import Support from "./components/Spport";
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
           <Route path="cookie-policy" element={<CookiePolicy />} />
           <Route path="why-shop-with-us" element={<WhyShopWithUs />} />
           <Route path="return-policy" element={<ReturnPolicy />} />
+          <Route path="support" element={<Support />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
         </Route>
         <Route path="*" element={<ErrorPage />} />
