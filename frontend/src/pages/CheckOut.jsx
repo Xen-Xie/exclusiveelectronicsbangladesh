@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router";
 import Btn from "../components/Common/Btn";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import LocationSelector from "../components/Common/LocationSelector";
 
 function CheckOut() {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -36,6 +37,11 @@ function CheckOut() {
     postalCode: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("ssl");
+
+  // Location states
+  const [selectedDivision, setSelectedDivision] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedUpazila, setSelectedUpazila] = useState("");
 
   // Calculate totals based on whether it's an existing order or new cart
   const subtotal = isExistingOrderPayment
@@ -71,8 +77,16 @@ function CheckOut() {
       errors.address = "Address is required";
     }
 
-    if (!form.city.trim()) {
-      errors.city = "City is required";
+    if (!selectedDivision) {
+      errors.division = "Division is required";
+    }
+
+    if (!selectedDistrict) {
+      errors.district = "District is required";
+    }
+
+    if (!selectedUpazila) {
+      errors.upazila = "Upazila/Thana is required";
     }
 
     if (!form.postalCode.trim()) {
@@ -97,6 +111,9 @@ function CheckOut() {
           postalCode: existingOrder.shippingAddress?.postalCode || "",
           country: existingOrder.shippingAddress?.country || "Bangladesh",
         });
+        setSelectedDivision(existingOrder.shippingAddress?.division || "");
+        setSelectedDistrict(existingOrder.shippingAddress?.district || "");
+        setSelectedUpazila(existingOrder.shippingAddress?.upazila || "");
         setPaymentMethod(existingOrder.payment?.method || "ssl");
         setLoading(false);
       } else if (!token) {
@@ -119,6 +136,9 @@ function CheckOut() {
             postalCode: u.postalCode || "",
             country: "Bangladesh",
           });
+          setSelectedDivision(u.division || "");
+          setSelectedDistrict(u.district || "");
+          setSelectedUpazila(u.upazila || "");
         } catch (e) {
           console.error("Failed to fetch user:", e);
           toast.error("Could not load user data. Please fill manually.");
@@ -150,7 +170,7 @@ function CheckOut() {
     }
 
     try {
-      // Update user profile with latest info
+      // Update user profile with latest info including location
       await axios.put(
         `${apiUrl}/api/user/update`,
         {
@@ -158,6 +178,9 @@ function CheckOut() {
           address: form.address,
           city: form.city,
           postalCode: form.postalCode,
+          division: selectedDivision,
+          district: selectedDistrict,
+          upazila: selectedUpazila,
         },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -179,6 +202,9 @@ function CheckOut() {
             city: form.city,
             postalCode: form.postalCode,
             country: form.country,
+            division: selectedDivision,
+            district: selectedDistrict,
+            upazila: selectedUpazila,
           },
           subtotal,
           shippingFee: shipping,
@@ -492,7 +518,7 @@ function CheckOut() {
                   <div>
                     <input
                       type="text"
-                      placeholder="Address *"
+                      placeholder="Street Address *"
                       value={form.address}
                       onChange={(e) =>
                         handleInputChange("address", e.target.value)
@@ -511,48 +537,56 @@ function CheckOut() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="City *"
-                        value={form.city}
-                        onChange={(e) =>
-                          handleInputChange("city", e.target.value)
-                        }
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                          formErrors.city ? "border-red-500" : "border-gray-200"
-                        }`}
-                      />
-                      {formErrors.city && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {formErrors.city}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Postal Code *"
-                        value={form.postalCode}
-                        onChange={(e) =>
-                          handleInputChange("postalCode", e.target.value)
-                        }
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                          formErrors.postalCode
-                            ? "border-red-500"
-                            : "border-gray-200"
-                        }`}
-                      />
-                      {formErrors.postalCode && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {formErrors.postalCode}
-                        </p>
-                      )}
-                    </div>
+                  {/* Location Selector */}
+                  <LocationSelector
+                    selectedDivision={selectedDivision}
+                    selectedDistrict={selectedDistrict}
+                    selectedUpazila={selectedUpazila}
+                    onDivisionChange={setSelectedDivision}
+                    onDistrictChange={setSelectedDistrict}
+                    onUpazilaChange={setSelectedUpazila}
+                  />
+
+                  {/* Display location errors */}
+                  {formErrors.division && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.division}
+                    </p>
+                  )}
+                  {formErrors.district && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.district}
+                    </p>
+                  )}
+                  {formErrors.upazila && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.upazila}
+                    </p>
+                  )}
+
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Postal Code *"
+                      value={form.postalCode}
+                      onChange={(e) =>
+                        handleInputChange("postalCode", e.target.value)
+                      }
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        formErrors.postalCode
+                          ? "border-red-500"
+                          : "border-gray-200"
+                      }`}
+                    />
+                    {formErrors.postalCode && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.postalCode}
+                      </p>
+                    )}
                   </div>
                 </div>
-                {/*Payment Methods */}
+
+                {/* Payment Methods */}
                 <h3 className="font-medium text-gray-800 mt-6 mb-3">
                   Payment Method
                 </h3>
@@ -631,6 +665,11 @@ function CheckOut() {
                   <p className="text-sm text-gray-600 mb-2">Shipping to:</p>
                   <p className="font-medium text-gray-800">{form.fullName}</p>
                   <p className="text-sm text-gray-600">{form.address}</p>
+                  <p className="text-sm text-gray-600">
+                    {selectedDivision && `${selectedDivision}, `}
+                    {selectedDistrict && `${selectedDistrict}, `}
+                    {selectedUpazila && selectedUpazila}
+                  </p>
                   <p className="text-sm text-gray-600">
                     {form.city}, {form.postalCode}
                   </p>
