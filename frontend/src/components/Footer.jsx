@@ -10,16 +10,12 @@ function Footer() {
     { to: "/cookie-policy", label: "Cookie Policy" },
     { to: "/terms-and-conditions", label: "Terms & Conditions" },
     { to: "/why-shop-with-us", label: "Why Shop With Us" },
-    { to: "/blog", label: "Exclusive Electronics Blog" },
-    { to: "/careers", label: "Exclusive Electronics Career" },
   ];
 
   const helpLinks = [
-    { to: "/payment", label: "Payment" },
-    { to: "/shipping", label: "Shipping" },
     { to: "/return-policy", label: "Return And Replacement" },
     { to: "/contact", label: "Chat With Us" },
-    { to: "/support", label: "Exclusive Electronics Support" },
+    { to: "/support", label: "Dropore Support" },
   ];
 
   const socialLinks = [
