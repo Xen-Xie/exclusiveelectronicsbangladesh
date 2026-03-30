@@ -21,6 +21,7 @@ function Navigation() {
   const handleLogout = () => {
     logout();
     navigate("/");
+    setOpenMenu(false);
   };
 
   return (
@@ -87,7 +88,7 @@ function Navigation() {
                 </Link>
               </div>
             ) : (
-              <div className="relative group cusror-pointer">
+              <div className="relative group cursor-pointer">
                 <button className="flex items-center gap-2 focus:outline-none">
                   <div className="w-8 h-8 bg-linear-to-r from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-semibold">
                     {user.name?.charAt(0).toUpperCase() || "U"}
@@ -181,7 +182,7 @@ function Navigation() {
               className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 md:hidden"
             >
               <div className="flex flex-col h-full">
-                {/* Header */}
+                {/* Header with Logo and Close Button */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center">
                   <button
                     onClick={() => setOpenMenu(false)}
@@ -207,23 +208,61 @@ function Navigation() {
                 )}
 
                 {/* Navigation Links */}
-                <div className="flex-1 py-4">
+                <div className="flex-1 overflow-y-auto py-4">
                   {navItems.map((item, index) => (
                     <Link
                       key={index}
                       to={item.path}
                       onClick={() => setOpenMenu(false)}
-                      className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
+                      className="flex items-center px-5 py-3 text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors"
                     >
                       <span className="font-medium">{item.name}</span>
                     </Link>
                   ))}
-                </div>
 
-                {/* Footer Actions */}
-                <div className="border-t border-gray-100 p-4 space-y-2">
-                  {!user ? (
+                  {/* Profile Links for Logged In Users */}
+                  {user && (
                     <>
+                      <div className="h-px bg-gray-100 my-2 mx-5"></div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setOpenMenu(false)}
+                        className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <i className="fa-solid fa-user w-5 text-gray-400"></i>
+                        <span>My Profile</span>
+                      </Link>
+                      <Link
+                        to="/profile/orders"
+                        onClick={() => setOpenMenu(false)}
+                        className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <i className="fa-solid fa-box w-5 text-gray-400"></i>
+                        <span>My Orders</span>
+                      </Link>
+                      <Link
+                        to="/profile/wishlist"
+                        onClick={() => setOpenMenu(false)}
+                        className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <i className="fa-solid fa-heart w-5 text-gray-400"></i>
+                        <span>Wishlist</span>
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Logout Button - Now inside the scrollable area */}
+                  {user && (
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-5 py-3 text-red-600 hover:bg-red-50 transition-colors mt-2"
+                    >
+                      <i className="fa-solid fa-right-from-bracket w-5"></i>
+                      <span>Logout</span>
+                    </button>
+                  )}
+                  {!user && (
+                    <div className="border-t border-gray-100 p-4 space-y-4">
                       <Link
                         to="/login"
                         onClick={() => setOpenMenu(false)}
@@ -238,44 +277,7 @@ function Navigation() {
                       >
                         Sign Up
                       </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        to="/profile"
-                        onClick={() => setOpenMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <i className="fa-solid fa-user w-5"></i>
-                        <span>My Profile</span>
-                      </Link>
-                      <Link
-                        to="/profile/orders"
-                        onClick={() => setOpenMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <i className="fa-solid fa-box w-5"></i>
-                        <span>My Orders</span>
-                      </Link>
-                      <Link
-                        to="/profile/wishlist"
-                        onClick={() => setOpenMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <i className="fa-solid fa-heart w-5"></i>
-                        <span>Wishlist</span>
-                      </Link>
-                      <button
-                        onClick={() => {
-                          handleLogout();
-                          setOpenMenu(false);
-                        }}
-                        className="flex items-center gap-3 w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <i className="fa-solid fa-right-from-bracket w-5"></i>
-                        <span>Logout</span>
-                      </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
