@@ -208,6 +208,12 @@ export default function AddProductPage() {
     sku: "",
     tags: "",
     featured: false,
+    // quick info fields
+    freeShipping: true,
+    returnPolicy: "30-day",
+    support: "24/7",
+    deliveryTime: "3-5 business days",
+    warranty: "1 year",
   });
 
   const [loading, setLoading] = useState(false);
@@ -243,7 +249,7 @@ export default function AddProductPage() {
         // Extract unique categories from products
         const uniqueCategories = [
           ...new Set(
-            productsData.map((product) => product.category).filter(Boolean)
+            productsData.map((product) => product.category).filter(Boolean),
           ),
         ].map((category) => ({ name: category }));
 
@@ -293,6 +299,15 @@ export default function AddProductPage() {
       requestData.onSale = form.onSale;
       requestData.featured = form.featured;
 
+      // Quick Info fields
+      requestData.quickInfo = JSON.stringify({
+        freeShipping: form.freeShipping,
+        returnPolicy: form.returnPolicy,
+        support: form.support,
+        deliveryTime: form.deliveryTime,
+        warranty: form.warranty,
+      });
+
       // Append to FormData
       Object.keys(requestData).forEach((key) => {
         if (requestData[key] !== null && requestData[key] !== undefined) {
@@ -322,7 +337,7 @@ export default function AddProductPage() {
               Authorization: `Bearer ${authToken}`,
               "Content-Type": "multipart/form-data",
             },
-          }
+          },
         );
         message = "Product updated successfully!";
       } else {
@@ -395,10 +410,12 @@ export default function AddProductPage() {
     const price = product.price || 0;
     const salePrice = product.salePrice || 0;
 
+    // Get quick info from product or use defaults
+    const quickInfo = product.quickInfo || {};
     // Check if salePrice is valid, if not show warning
     if (salePrice > price) {
       alert(
-        "Warning: This product has an invalid sale price (higher than regular price). The sale price has been cleared."
+        "Warning: This product has an invalid sale price (higher than regular price). The sale price has been cleared.",
       );
     }
 
@@ -415,6 +432,12 @@ export default function AddProductPage() {
         ? product.tags.join(", ")
         : product.tags || "",
       featured: product.featured || false,
+      freeShipping:
+        quickInfo.freeShipping !== undefined ? quickInfo.freeShipping : true,
+      returnPolicy: quickInfo.returnPolicy || "30-day",
+      support: quickInfo.support || "24/7",
+      deliveryTime: quickInfo.deliveryTime || "3-5 business days",
+      warranty: quickInfo.warranty || "1 year",
     });
 
     // Populate images for editing
@@ -437,7 +460,49 @@ export default function AddProductPage() {
       resetForm();
     }
   };
+  // Add quick info options
+  const returnPolicyOptions = [
+    { value: "30-day", label: "30-Day Returns", icon: "fa-undo-alt" },
+    { value: "14-day", label: "14-Day Returns", icon: "fa-undo-alt" },
+    { value: "7-day", label: "7-Day Returns", icon: "fa-undo-alt" },
+    { value: "non-returnable", label: "Non-Returnable", icon: "fa-ban" },
+  ];
 
+  const supportOptions = [
+    { value: "24/7", label: "24/7 Support", icon: "fa-headset" },
+    { value: "business-hours", label: "Business Hours", icon: "fa-clock" },
+    { value: "email-only", label: "Email Only", icon: "fa-envelope" },
+  ];
+
+  const deliveryOptions = [
+    {
+      value: "3-5 business days",
+      label: "3-5 Business Days",
+      icon: "fa-truck",
+    },
+    {
+      value: "1-2 business days",
+      label: "Express (1-2 Days)",
+      icon: "fa-truck-fast",
+    },
+    {
+      value: "5-7 business days",
+      label: "Standard (5-7 Days)",
+      icon: "fa-truck",
+    },
+    {
+      value: "7-14 business days",
+      label: "Economy (7-14 Days)",
+      icon: "fa-ship",
+    },
+  ];
+
+  const warrantyOptions = [
+    { value: "1 year", label: "1 Year Warranty", icon: "fa-shield-alt" },
+    { value: "2 years", label: "2 Years Warranty", icon: "fa-shield-alt" },
+    { value: "6 months", label: "6 Months Warranty", icon: "fa-shield-alt" },
+    { value: "no warranty", label: "No Warranty", icon: "fa-shield-alt" },
+  ];
   // Reset form
   const resetForm = () => {
     setForm({
@@ -451,6 +516,11 @@ export default function AddProductPage() {
       sku: "",
       tags: "",
       featured: false,
+      freeShipping: true,
+      returnPolicy: "30-day",
+      support: "24/7",
+      deliveryTime: "3-5 business days",
+      warranty: "1 year",
     });
     setImages([]);
     setIsEditing(false);
@@ -561,7 +631,7 @@ export default function AddProductPage() {
 
     if (
       !categories.find(
-        (cat) => cat.name.toLowerCase() === newCategory.toLowerCase()
+        (cat) => cat.name.toLowerCase() === newCategory.toLowerCase(),
       )
     ) {
       setCategories((prev) => [...prev, { name: newCategory.trim() }]);
@@ -959,7 +1029,131 @@ export default function AddProductPage() {
                 </div>
               </div>
             </div>
+            {/* Quick Info Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-secondary flex items-center gap-2">
+                <i className="fa-solid fa-bolt text-primary"></i>
+                Quick Info (Product Highlights)
+              </h3>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Free Shipping Toggle */}
+                <div className="bg-linear-to-br from-blue-50/50 to-blue-100/30 rounded-xl p-4">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <i className="fa-solid fa-truck text-blue-600 text-xl"></i>
+                      <div>
+                        <span className="font-medium text-gray-800">
+                          Free Shipping
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          Offer free shipping on this product
+                        </p>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        name="freeShipping"
+                        checked={form.freeShipping}
+                        onChange={handleChange}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`w-10 h-5 rounded-full transition ${
+                          form.freeShipping ? "bg-blue-600" : "bg-gray-300"
+                        }`}
+                      ></div>
+                      <div
+                        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                          form.freeShipping ? "translate-x-5" : ""
+                        }`}
+                      ></div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Return Policy */}
+                <div className="bg-linear-to-br from-purple-50/50 to-purple-100/30 rounded-xl p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <i className="fa-solid fa-undo-alt text-purple-600 mr-2"></i>
+                    Return Policy
+                  </label>
+                  <select
+                    name="returnPolicy"
+                    value={form.returnPolicy}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    {returnPolicyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Support Type */}
+                <div className="bg-linear-to-br from-amber-50/50 to-amber-100/30 rounded-xl p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <i className="fa-solid fa-headset text-amber-600 mr-2"></i>
+                    Customer Support
+                  </label>
+                  <select
+                    name="support"
+                    value={form.support}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  >
+                    {supportOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Delivery Time */}
+                <div className="bg-linear-to-br from-green-50/50 to-green-100/30 rounded-xl p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <i className="fa-solid fa-clock text-green-600 mr-2"></i>
+                    Delivery Time
+                  </label>
+                  <select
+                    name="deliveryTime"
+                    value={form.deliveryTime}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    {deliveryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Warranty */}
+                <div className="bg-linear-to-br from-red-50/50 to-red-100/30 rounded-xl p-4 md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <i className="fa-solid fa-shield-alt text-red-600 mr-2"></i>
+                    Warranty
+                  </label>
+                  <select
+                    name="warranty"
+                    value={form.warranty}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  >
+                    {warrantyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
             {/* Additional Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -1186,6 +1380,7 @@ export default function AddProductPage() {
           </form>
         </div>
 
+        {/* Quick Info Preview */}
         {/* Preview Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-fit sticky top-6">
           <div className="bg-linear-to-r from-green-500 to-emerald-600 p-6">
@@ -1287,6 +1482,49 @@ export default function AddProductPage() {
                 </div>
               </div>
 
+              {/* Quick Info Preview */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-linear-to-br from-blue-50 to-blue-100 p-3 rounded-xl text-center">
+                    <i className="fa-solid fa-truck text-primary text-lg mb-1"></i>
+                    <p className="text-xs text-primary font-medium">
+                      {form.freeShipping ? "Free Shipping" : "Paid Shipping"}
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-br from-purple-50 to-purple-100 p-3 rounded-xl text-center">
+                    <i className="fa-solid fa-undo-alt text-purple-600 text-lg mb-1"></i>
+                    <p className="text-xs text-purple-700 font-medium">
+                      {returnPolicyOptions.find(
+                        (opt) => opt.value === form.returnPolicy,
+                      )?.label || form.returnPolicy}
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-br from-amber-50 to-amber-100 p-3 rounded-xl text-center">
+                    <i className="fa-solid fa-headset text-warning text-lg mb-1"></i>
+                    <p className="text-xs text-warning font-medium">
+                      {supportOptions.find((opt) => opt.value === form.support)
+                        ?.label || form.support}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Additional Info Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-linear-to-br from-green-50 to-green-100 p-2 rounded-lg text-center">
+                    <i className="fa-solid fa-clock text-green-600 text-sm mb-0.5"></i>
+                    <p className="text-[10px] text-green-700 font-medium">
+                      {form.deliveryTime}
+                    </p>
+                  </div>
+                  <div className="bg-linear-to-br from-red-50 to-red-100 p-2 rounded-lg text-center">
+                    <i className="fa-solid fa-shield-alt text-red-600 text-sm mb-0.5"></i>
+                    <p className="text-[10px] text-red-700 font-medium">
+                      {form.warranty}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Tags */}
               {form.tags && (
                 <div>
@@ -1339,11 +1577,11 @@ export default function AddProductPage() {
                     onClick={() => {
                       // Find the product to get its slug
                       const product = products.find(
-                        (p) => p._id === currentProductId
+                        (p) => p._id === currentProductId,
                       );
                       if (product && product.slug) {
                         navigate(
-                          `/products/${currentProductId}/${product.slug}`
+                          `/products/${currentProductId}/${product.slug}`,
                         );
                       } else {
                         // Fallback to just ID if no slug

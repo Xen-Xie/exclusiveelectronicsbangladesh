@@ -37,14 +37,13 @@ function ProductInfo({
         />
       </div>
 
-      {/* Quick Info */}
-      <QuickInfo />
+      {/* Dynamic Quick Info */}
+      <QuickInfo product={product} />
     </div>
   );
 }
-{
-  /* Price */
-}
+
+/* Price */
 function PriceDisplay({ product }) {
   return (
     <div className="flex items-baseline gap-4 mb-6">
@@ -76,9 +75,8 @@ function PriceDisplay({ product }) {
     </div>
   );
 }
-{
-  /* Stock Information */
-}
+
+/* Stock Information */
 function StockInfo({ product, availableStock, reservedInCart }) {
   return (
     <div className="mb-6 p-4 bg-linear-to-r from-gray-50 to-gray-100 rounded-xl">
@@ -116,24 +114,83 @@ function StockInfo({ product, availableStock, reservedInCart }) {
     </div>
   );
 }
-{
-  /* Quick Info */
-}
-function QuickInfo() {
+
+/* Dynamic Quick Info - Values come from product.quickInfo */
+function QuickInfo({ product }) {
+  const quickInfo = product.quickInfo || {};
+
+  // Helper functions to get display text
+  const getReturnPolicyLabel = (policy) => {
+    const policies = {
+      "30-day": "30-Day Returns",
+      "14-day": "14-Day Returns",
+      "7-day": "7-Day Returns",
+      "non-returnable": "Non-Returnable",
+    };
+    return policies[policy] || "30-Day Returns";
+  };
+
+  const getSupportLabel = (support) => {
+    const supports = {
+      "24/7": "24/7 Support",
+      "business-hours": "Business Hours",
+      "email-only": "Email Only",
+    };
+    return supports[support] || "24/7 Support";
+  };
+
   return (
-    <div className="grid grid-cols-3 gap-3">
-      <div className="bg-linear-to-br from-blue-50 to-blue-100 p-3 rounded-xl text-center">
-        <i className="fa-solid fa-truck text-primary text-lg mb-1"></i>
-        <p className="text-xs text-primary font-medium">Free Shipping</p>
+    <div className="space-y-3">
+      {/* Main 3-column quick info */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Free Shipping / Shipping Info */}
+        <div className="bg-linear-to-br from-blue-50 to-blue-100 p-3 rounded-xl text-center">
+          <i className="fa-solid fa-truck text-primary text-lg mb-1"></i>
+          <p className="text-xs text-primary font-medium">
+            {quickInfo.freeShipping !== false
+              ? "Free Shipping"
+              : "Paid Shipping"}
+          </p>
+        </div>
+
+        {/* Return Policy */}
+        <div className="bg-linear-to-br from-purple-50 to-purple-100 p-3 rounded-xl text-center">
+          <i className="fa-solid fa-undo-alt text-purple-600 text-lg mb-1"></i>
+          <p className="text-xs text-purple-700 font-medium">
+            {getReturnPolicyLabel(quickInfo.returnPolicy)}
+          </p>
+        </div>
+
+        {/* Customer Support */}
+        <div className="bg-linear-to-br from-amber-50 to-amber-100 p-3 rounded-xl text-center">
+          <i className="fa-solid fa-headset text-warning text-lg mb-1"></i>
+          <p className="text-xs text-warning font-medium">
+            {getSupportLabel(quickInfo.support)}
+          </p>
+        </div>
       </div>
-      <div className="bg-linear-to-br from-purple-50 to-purple-100 p-3 rounded-xl text-center">
-        <i className="fa-solid fa-undo-alt text-purple-600 text-lg mb-1"></i>
-        <p className="text-xs text-purple-700 font-medium">30-Day Returns</p>
-      </div>
-      <div className="bg-linear-to-br from-amber-50 to-amber-100 p-3 rounded-xl text-center">
-        <i className="fa-solid fa-headset text-warning text-lg mb-1"></i>
-        <p className="text-xs text-warning font-medium">24/7 Support</p>
-      </div>
+
+      {/* Additional info row (optional) */}
+      {(quickInfo.deliveryTime || quickInfo.warranty) && (
+        <div className="grid grid-cols-2 gap-3">
+          {quickInfo.deliveryTime && (
+            <div className="bg-linear-to-br from-green-50 to-green-100 p-2 rounded-lg text-center">
+              <i className="fa-solid fa-clock text-green-600 text-sm mb-0.5"></i>
+              <p className="text-[10px] text-green-700 font-medium truncate">
+                {quickInfo.deliveryTime}
+              </p>
+            </div>
+          )}
+          {quickInfo.warranty && (
+            <div className="bg-linear-to-br from-red-50 to-red-100 p-2 rounded-lg text-center">
+              <i className="fa-solid fa-shield-alt text-red-600 text-sm mb-0.5"></i>
+              <p className="text-[10px] text-red-700 font-medium truncate">
+                {quickInfo.warranty}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
