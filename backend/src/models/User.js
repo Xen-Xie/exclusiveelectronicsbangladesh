@@ -97,6 +97,21 @@ const userSchema = new Schema(
       default: "",
       maxlength: [20, "Postal code cannot exceed 20 characters"],
     },
+    division: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    district: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    upazila: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     role: {
       type: String,
       enum: ["user", "admin"],

@@ -46,6 +46,9 @@ const orderSchema = new mongoose.Schema(
       city: String,
       postalCode: String,
       country: String,
+      division: String,
+      district: String,
+      upazila: String,
     },
 
     subtotal: { type: Number, default: 0 },

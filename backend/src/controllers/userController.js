@@ -262,7 +262,15 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { phoneNumber, address, city, postalCode } = req.body;
+    const {
+      phoneNumber,
+      address,
+      city,
+      postalCode,
+      division,
+      district,
+      upazila,
+    } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -271,6 +279,9 @@ export const updateUser = async (req, res) => {
         address,
         city,
         postalCode,
+        division,
+        district,
+        upazila,
       },
       { new: true, runValidators: true },
     ).select("-password");
