@@ -1,5 +1,4 @@
-// components/ProductInfo.jsx
-import React from "react";
+import React, { useState } from "react";
 import StarRating from "./StarRating";
 
 function ProductInfo({
@@ -8,6 +7,8 @@ function ProductInfo({
   availableStock,
   reservedInCart,
 }) {
+  const [showQuickInfo, setShowQuickInfo] = useState(false);
+
   return (
     <div className="space-y-6">
       <div>
@@ -37,8 +38,37 @@ function ProductInfo({
         />
       </div>
 
-      {/* Dynamic Quick Info */}
-      <QuickInfo product={product} />
+      {/* Dynamic Quick Info with Toggle */}
+      <div className="border-t border-gray-200 pt-4">
+        {/* Toggle Button */}
+        <button
+          onClick={() => setShowQuickInfo(!showQuickInfo)}
+          className="w-full flex items-center justify-between group mb-3"
+        >
+          <div className="flex items-center gap-2">
+            <i className="fa-solid fa-bolt text-primary text-sm"></i>
+            <span className="text-sm font-medium text-gray-700">
+              Quick Info
+            </span>
+          </div>
+          <div
+            className={`transform transition-transform duration-300 ${
+              showQuickInfo ? "rotate-180" : ""
+            }`}
+          >
+            <i className="fa-solid fa-chevron-down text-gray-400 text-xs group-hover:text-primary transition-colors"></i>
+          </div>
+        </button>
+
+        {/* Quick Info Content */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ${
+            showQuickInfo ? "max-h-96" : "max-h-0"
+          }`}
+        >
+          <QuickInfoContent product={product} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -115,8 +145,8 @@ function StockInfo({ product, availableStock, reservedInCart }) {
   );
 }
 
-/* Dynamic Quick Info - Values come from product.quickInfo */
-function QuickInfo({ product }) {
+/* Quick Info Content - Separated component */
+function QuickInfoContent({ product }) {
   const quickInfo = product.quickInfo || {};
 
   // Helper functions to get display text
@@ -140,7 +170,7 @@ function QuickInfo({ product }) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pt-2">
       {/* Main 3-column quick info */}
       <div className="grid grid-cols-3 gap-3">
         {/* Free Shipping / Shipping Info */}
