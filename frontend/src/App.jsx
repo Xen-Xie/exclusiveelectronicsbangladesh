@@ -29,6 +29,7 @@ import CategoryPage from "./pages/CategoryPage";
 import BannerManager from "./pages/admin/BannerManager";
 import ErrorPage from "./pages/ErrorPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
           <Route path="payment-failed" element={<PaymentFailed />} />
           <Route path="terms-and-conditions" element={<TermsandConditions />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} /> 
+          <Route path="cookie-policy" element={<CookiePolicy />} /> 
           <Route path="/category/:categoryName" element={<CategoryPage />} />
         </Route>
         <Route path="*" element={<ErrorPage />} />
