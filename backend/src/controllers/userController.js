@@ -621,3 +621,55 @@ export const resendVerification = async (req, res) => {
     });
   }
 };
+
+// Send password reset email
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Email is required",
+      });
+    }
+
+    // Check if user exists in MongoDB
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "fail",
+        message: "No account found with this email address",
+      });
+    }
+
+    // Check if user is Google user (no password)
+    if (user.googleId) {
+      return res.status(400).json({
+        status: "fail",
+        message: "This account uses Google Sign-In. Please login with Google.",
+      });
+    }
+
+    // Check if user is verified
+    if (!user.emailVerified) {
+      return res.status(400).json({
+        status: "fail",
+        message:
+          "Please verify your email address first. Check your inbox for verification link.",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "User found. Password reset email will be sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({
+      status: "fail",
+      message: error.message,
+    });
+  }
+};
