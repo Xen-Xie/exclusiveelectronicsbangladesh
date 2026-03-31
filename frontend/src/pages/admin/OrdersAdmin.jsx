@@ -39,7 +39,8 @@ export default function OrdersAdmin() {
     } catch (err) {
       console.error("Failed to fetch orders:", err);
       alert(
-        "Failed to load orders: " + (err.response?.data?.message || err.message)
+        "Failed to load orders: " +
+          (err.response?.data?.message || err.message),
       );
     } finally {
       setLoading(false);
@@ -79,7 +80,7 @@ export default function OrdersAdmin() {
       const res = await axios.put(
         `${apiUrl}/api/order/${orderId}/status`,
         { status: newStatus },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: { Authorization: `Bearer ${authToken}` } },
       );
 
       await fetchOrders(); // Refresh orders
@@ -88,7 +89,7 @@ export default function OrdersAdmin() {
       console.error("Failed to update order status:", err);
       alert(
         "Failed to update order status: " +
-          (err.response?.data?.message || err.message)
+          (err.response?.data?.message || err.message),
       );
     } finally {
       setUpdatingOrder(null);
@@ -106,7 +107,7 @@ export default function OrdersAdmin() {
       await axios.put(
         `${apiUrl}/api/order/${orderId}/cancel`,
         {},
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: { Authorization: `Bearer ${authToken}` } },
       );
 
       await fetchOrders(); // Refresh orders
@@ -115,7 +116,7 @@ export default function OrdersAdmin() {
       console.error("Failed to cancel order:", err);
       alert(
         "Failed to cancel order: " +
-          (err.response?.data?.message || err.message)
+          (err.response?.data?.message || err.message),
       );
     } finally {
       setUpdatingOrder(null);
@@ -126,7 +127,7 @@ export default function OrdersAdmin() {
   const deleteOrder = async (orderId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this order? This action cannot be undone."
+        "Are you sure you want to delete this order? This action cannot be undone.",
       )
     )
       return;
@@ -145,7 +146,7 @@ export default function OrdersAdmin() {
       console.error("Failed to delete order:", err);
       alert(
         "Failed to delete order: " +
-          (err.response?.data?.message || err.message)
+          (err.response?.data?.message || err.message),
       );
     } finally {
       setUpdatingOrder(null);
@@ -163,7 +164,7 @@ export default function OrdersAdmin() {
       await axios.put(
         `${apiUrl}/api/order/${orderId}/pay`,
         { method: "manual" },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { headers: { Authorization: `Bearer ${authToken}` } },
       );
 
       await fetchOrders(); // Refresh orders
@@ -172,7 +173,7 @@ export default function OrdersAdmin() {
       console.error("Failed to mark order as paid:", err);
       alert(
         "Failed to mark order as paid: " +
-          (err.response?.data?.message || err.message)
+          (err.response?.data?.message || err.message),
       );
     } finally {
       setUpdatingOrder(null);
@@ -276,7 +277,7 @@ export default function OrdersAdmin() {
                         <div className="flex items-center gap-2 mb-2">
                           <span
                             className={`inline-block w-3 h-3 rounded-full ${getStatusColor(
-                              order.status
+                              order.status,
                             )}`}
                           ></span>
                           <span className="font-semibold capitalize">
@@ -350,7 +351,7 @@ export default function OrdersAdmin() {
                           <Select
                             options={statusOptions}
                             value={statusOptions.find(
-                              (opt) => opt.value === order.status
+                              (opt) => opt.value === order.status,
                             )}
                             onChange={(selected) =>
                               updateOrderStatus(order._id, selected.value)
@@ -443,7 +444,9 @@ export default function OrdersAdmin() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-bold">Order Details</h2>
-                  <p className="text-secondary">Order ID: {selectedOrder._id}</p>
+                  <p className="text-secondary">
+                    Order ID: {selectedOrder._id}
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowOrderModal(false)}
@@ -463,7 +466,7 @@ export default function OrdersAdmin() {
                       <div className="flex items-center gap-2">
                         <span
                           className={`inline-block w-3 h-3 rounded-full ${getStatusColor(
-                            selectedOrder.status
+                            selectedOrder.status,
                           )}`}
                         ></span>
                         <span className="capitalize">
@@ -530,20 +533,28 @@ export default function OrdersAdmin() {
                           {selectedOrder.shippingAddress.phone}
                         </p>
                         <p>
-                          <strong>Address:</strong>{" "}
-                          {selectedOrder.shippingAddress.addressLine}
-                        </p>
-                        <p>
-                          <strong>City:</strong>{" "}
-                          {selectedOrder.shippingAddress.city}
-                        </p>
-                        <p>
                           <strong>Postal Code:</strong>{" "}
                           {selectedOrder.shippingAddress.postalCode}
                         </p>
                         <p>
                           <strong>Country:</strong>{" "}
                           {selectedOrder.shippingAddress.country}
+                        </p>
+                        <p>
+                          <strong>Division:</strong>{" "}
+                          {selectedOrder.shippingAddress.division}
+                        </p>
+                        <p>
+                          <strong>District:</strong>{" "}
+                          {selectedOrder.shippingAddress.district}
+                        </p>
+                        <p>
+                          <strong>Upazila:</strong>{" "}
+                          {selectedOrder.shippingAddress.upazila}
+                        </p>
+                        <p>
+                          <strong>Address:</strong>{" "}
+                          {selectedOrder.shippingAddress.addressLine}
                         </p>
                       </div>
                     </div>
@@ -599,23 +610,23 @@ export default function OrdersAdmin() {
                       <Select
                         options={statusOptions}
                         value={statusOptions.find(
-                          (opt) => opt.value === selectedOrder.status
+                          (opt) => opt.value === selectedOrder.status,
                         )}
                         onChange={(selected) => {
                           updateOrderStatus(selectedOrder._id, selected.value);
                           setShowOrderModal(false);
                         }}
                         styles={{
-                              control: (base) => ({
-                                ...base,
-                                border: "1px solid #d1d5db",
-                                borderRadius: "0.375rem",
-                                fontSize: "0.875rem",
-                                minHeight: "32px",
-                              }),
-                              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                            }}
-                            menuPortalTarget={document.body}
+                          control: (base) => ({
+                            ...base,
+                            border: "1px solid #d1d5db",
+                            borderRadius: "0.375rem",
+                            fontSize: "0.875rem",
+                            minHeight: "32px",
+                          }),
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        }}
+                        menuPortalTarget={document.body}
                         placeholder="Update Status"
                       />
                       <div className="grid grid-cols-2 gap-2">

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../auth/useAuth";
 import { useCart } from "../context/useCart";
@@ -25,7 +25,9 @@ function CheckOut() {
     fullName: "",
     phone: "",
     address: "",
-    city: "",
+    division: "",
+    district: "",
+    upazila: "",
     postalCode: "",
     country: "Bangladesh",
   });
@@ -33,7 +35,9 @@ function CheckOut() {
     fullName: "",
     phone: "",
     address: "",
-    city: "",
+    division: "",
+    district: "",
+    upazila: "",
     postalCode: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("ssl");
@@ -77,15 +81,15 @@ function CheckOut() {
       errors.address = "Address is required";
     }
 
-    if (!selectedDivision) {
+    if (!form.division) {
       errors.division = "Division is required";
     }
 
-    if (!selectedDistrict) {
+    if (!form.district) {
       errors.district = "District is required";
     }
 
-    if (!selectedUpazila) {
+    if (!form.upazila) {
       errors.upazila = "Upazila/Thana is required";
     }
 
@@ -99,21 +103,44 @@ function CheckOut() {
     return Object.keys(errors).length === 0;
   };
 
+  // Update form when location selectors change
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      division: selectedDivision,
+      district: selectedDistrict,
+      upazila: selectedUpazila,
+    }));
+    // Clear location errors when values are filled
+    if (selectedDivision && formErrors.division) {
+      setFormErrors((prev) => ({ ...prev, division: "" }));
+    }
+    if (selectedDistrict && formErrors.district) {
+      setFormErrors((prev) => ({ ...prev, district: "" }));
+    }
+    if (selectedUpazila && formErrors.upazila) {
+      setFormErrors((prev) => ({ ...prev, upazila: "" }));
+    }
+  }, [selectedDivision, selectedDistrict, selectedUpazila]);
+
   // Load user profile and existing order data
   useEffect(() => {
     const loadData = async () => {
       if (isExistingOrderPayment && existingOrder) {
+        const address = existingOrder.shippingAddress || {};
         setForm({
-          fullName: existingOrder.shippingAddress?.fullName || "",
-          phone: existingOrder.shippingAddress?.phone || "",
-          address: existingOrder.shippingAddress?.address || "",
-          city: existingOrder.shippingAddress?.city || "",
-          postalCode: existingOrder.shippingAddress?.postalCode || "",
-          country: existingOrder.shippingAddress?.country || "Bangladesh",
+          fullName: address.fullName || "",
+          phone: address.phone || "",
+          address: address.address || "",
+          division: address.division || "",
+          district: address.district || "",
+          upazila: address.upazila || "",
+          postalCode: address.postalCode || "",
+          country: address.country || "Bangladesh",
         });
-        setSelectedDivision(existingOrder.shippingAddress?.division || "");
-        setSelectedDistrict(existingOrder.shippingAddress?.district || "");
-        setSelectedUpazila(existingOrder.shippingAddress?.upazila || "");
+        setSelectedDivision(address.division || "");
+        setSelectedDistrict(address.district || "");
+        setSelectedUpazila(address.upazila || "");
         setPaymentMethod(existingOrder.payment?.method || "ssl");
         setLoading(false);
       } else if (!token) {
@@ -132,7 +159,9 @@ function CheckOut() {
             fullName: u.name || u.fullName || "",
             phone: u.phoneNumber || "",
             address: u.address || "",
-            city: u.city || "",
+            division: u.division || "",
+            district: u.district || "",
+            upazila: u.upazila || "",
             postalCode: u.postalCode || "",
             country: "Bangladesh",
           });
@@ -176,11 +205,10 @@ function CheckOut() {
         {
           phoneNumber: form.phone,
           address: form.address,
-          city: form.city,
           postalCode: form.postalCode,
-          division: selectedDivision,
-          district: selectedDistrict,
-          upazila: selectedUpazila,
+          division: form.division,
+          district: form.district,
+          upazila: form.upazila,
         },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -199,12 +227,11 @@ function CheckOut() {
             fullName: form.fullName,
             phone: form.phone,
             address: form.address,
-            city: form.city,
+            division: form.division,
+            district: form.district,
+            upazila: form.upazila,
             postalCode: form.postalCode,
             country: form.country,
-            division: selectedDivision,
-            district: selectedDistrict,
-            upazila: selectedUpazila,
           },
           subtotal,
           shippingFee: shipping,
@@ -473,6 +500,7 @@ function CheckOut() {
                   Shipping Information
                 </h3>
                 <div className="space-y-4">
+                  {/* Full Name */}
                   <div>
                     <input
                       type="text"
@@ -495,6 +523,7 @@ function CheckOut() {
                     )}
                   </div>
 
+                  {/* Phone Number */}
                   <div>
                     <input
                       type="tel"
@@ -511,28 +540,6 @@ function CheckOut() {
                     {formErrors.phone && (
                       <p className="text-red-500 text-xs mt-1">
                         {formErrors.phone}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Street Address *"
-                      value={form.address}
-                      onChange={(e) =>
-                        handleInputChange("address", e.target.value)
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        formErrors.address
-                          ? "border-red-500"
-                          : "border-gray-200"
-                      }`}
-                      required
-                    />
-                    {formErrors.address && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {formErrors.address}
                       </p>
                     )}
                   </div>
@@ -564,6 +571,7 @@ function CheckOut() {
                     </p>
                   )}
 
+                  {/* Postal Code */}
                   <div>
                     <input
                       type="text"
@@ -581,6 +589,29 @@ function CheckOut() {
                     {formErrors.postalCode && (
                       <p className="text-red-500 text-xs mt-1">
                         {formErrors.postalCode}
+                      </p>
+                    )}
+                  </div>
+                  {/* Street Address */}
+                  {/* Address Field */}
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Street Address / House No *"
+                      value={form.address}
+                      onChange={(e) =>
+                        handleInputChange("address", e.target.value)
+                      }
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        formErrors.address
+                          ? "border-red-500"
+                          : "border-gray-200"
+                      }`}
+                      required
+                    />
+                    {formErrors.address && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.address}
                       </p>
                     )}
                   </div>
@@ -666,13 +697,11 @@ function CheckOut() {
                   <p className="font-medium text-gray-800">{form.fullName}</p>
                   <p className="text-sm text-gray-600">{form.address}</p>
                   <p className="text-sm text-gray-600">
-                    {selectedDivision && `${selectedDivision}, `}
-                    {selectedDistrict && `${selectedDistrict}, `}
-                    {selectedUpazila && selectedUpazila}
+                    {form.division && `${form.division}, `}
+                    {form.district && `${form.district}, `}
+                    {form.upazila && form.upazila}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    {form.city}, {form.postalCode}
-                  </p>
+                  <p className="text-sm text-gray-600">{form.postalCode}</p>
                   <p className="text-sm text-gray-600">📞 {form.phone}</p>
                 </div>
 
