@@ -196,7 +196,7 @@ export default function AddProductPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
 
-  // Form state
+  // Form state - Updated with shipping fields
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -208,8 +208,11 @@ export default function AddProductPage() {
     sku: "",
     tags: "",
     featured: false,
+    // Shipping fields
+    shippingInsideDhaka: 0,
+    shippingOutsideDhaka: 60,
     // quick info fields
-    freeShipping: true,
+    freeShippingInfo: true,
     returnPolicy: "30-day",
     support: "24/7",
     deliveryTime: "3-5 business days",
@@ -234,7 +237,6 @@ export default function AddProductPage() {
       try {
         const res = await axios.get(`${apiUrl}/api/products`);
 
-        // Handle different response structures
         let productsData = [];
         if (Array.isArray(res.data)) {
           productsData = res.data;
@@ -246,7 +248,6 @@ export default function AddProductPage() {
 
         setProducts(productsData);
 
-        // Extract unique categories from products
         const uniqueCategories = [
           ...new Set(
             productsData.map((product) => product.category).filter(Boolean),
@@ -268,7 +269,7 @@ export default function AddProductPage() {
     setIsSearching(searchTerm.trim().length > 0);
   };
 
-  // Handle form submission
+  // Handle form submission - Updated with shipping fields
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
@@ -277,16 +278,13 @@ export default function AddProductPage() {
 
       const data = new FormData();
 
-      // Build the data object
       const requestData = {};
 
-      // Include fields that have values
       if (form.name) requestData.name = form.name;
       if (form.description) requestData.description = form.description;
       if (form.category) requestData.category = form.category;
       if (form.price) requestData.price = parseFloat(form.price);
 
-      // Only send discountPrice, NOT salePrice
       if (form.salePrice) {
         requestData.discountPrice = parseFloat(form.salePrice);
       } else {
@@ -299,9 +297,23 @@ export default function AddProductPage() {
       requestData.onSale = form.onSale;
       requestData.featured = form.featured;
 
+      // Shipping fields
+      requestData.shippingInsideDhaka =
+        parseFloat(form.shippingInsideDhaka) || 0;
+      requestData.shippingOutsideDhaka =
+        parseFloat(form.shippingOutsideDhaka) || 60;
+      if (form.shippingInsideDhaka !== undefined) {
+        requestData.shippingInsideDhaka =
+          parseFloat(form.shippingInsideDhaka) || 0;
+      }
+      if (form.shippingOutsideDhaka !== undefined) {
+        requestData.shippingOutsideDhaka =
+          parseFloat(form.shippingOutsideDhaka) || 60;
+      }
+
       // Quick Info fields
       requestData.quickInfo = JSON.stringify({
-        freeShipping: form.freeShipping,
+        freeShipping: form.freeShippingInfo,
         returnPolicy: form.returnPolicy,
         support: form.support,
         deliveryTime: form.deliveryTime,
@@ -328,7 +340,6 @@ export default function AddProductPage() {
       let message = "";
 
       if (isEditing && currentProductId) {
-        // Update existing product
         res = await axios.put(
           `${apiUrl}/api/products/${currentProductId}`,
           data,
@@ -384,7 +395,6 @@ export default function AddProductPage() {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
-      // Refresh products list
       const refreshRes = await axios.get(`${apiUrl}/api/products`);
       let productsData = [];
       if (Array.isArray(refreshRes.data)) {
@@ -402,7 +412,7 @@ export default function AddProductPage() {
     }
   };
 
-  // Edit product
+  // Edit product - Updated with shipping fields
   const handleEdit = (product) => {
     setIsEditing(true);
     setCurrentProductId(product._id);
@@ -410,9 +420,8 @@ export default function AddProductPage() {
     const price = product.price || 0;
     const salePrice = product.salePrice || 0;
 
-    // Get quick info from product or use defaults
     const quickInfo = product.quickInfo || {};
-    // Check if salePrice is valid, if not show warning
+
     if (salePrice > price) {
       alert(
         "Warning: This product has an invalid sale price (higher than regular price). The sale price has been cleared.",
@@ -432,7 +441,17 @@ export default function AddProductPage() {
         ? product.tags.join(", ")
         : product.tags || "",
       featured: product.featured || false,
-      freeShipping:
+      // Shipping fields
+      shippingInsideDhaka:
+        product.shippingInsideDhaka !== undefined
+          ? product.shippingInsideDhaka
+          : 0,
+      shippingOutsideDhaka:
+        product.shippingOutsideDhaka !== undefined
+          ? product.shippingOutsideDhaka
+          : 60,
+      // Quick info fields
+      freeShippingInfo:
         quickInfo.freeShipping !== undefined ? quickInfo.freeShipping : true,
       returnPolicy: quickInfo.returnPolicy || "30-day",
       support: quickInfo.support || "24/7",
@@ -440,7 +459,6 @@ export default function AddProductPage() {
       warranty: quickInfo.warranty || "1 year",
     });
 
-    // Populate images for editing
     const imgs = (product.images || []).map((it) => ({
       id: makeId(),
       url: it.url,
@@ -448,7 +466,6 @@ export default function AddProductPage() {
     }));
     setImages(imgs);
 
-    // Scroll to form
     if (formRef.current) {
       formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -460,6 +477,7 @@ export default function AddProductPage() {
       resetForm();
     }
   };
+
   // Add quick info options
   const returnPolicyOptions = [
     { value: "30-day", label: "30-Day Returns", icon: "fa-undo-alt" },
@@ -503,6 +521,7 @@ export default function AddProductPage() {
     { value: "6 months", label: "6 Months Warranty", icon: "fa-shield-alt" },
     { value: "no warranty", label: "No Warranty", icon: "fa-shield-alt" },
   ];
+
   // Reset form
   const resetForm = () => {
     setForm({
@@ -516,7 +535,9 @@ export default function AddProductPage() {
       sku: "",
       tags: "",
       featured: false,
-      freeShipping: true,
+      shippingInsideDhaka: 0,
+      shippingOutsideDhaka: 60,
+      freeShippingInfo: true,
       returnPolicy: "30-day",
       support: "24/7",
       deliveryTime: "3-5 business days",
@@ -540,7 +561,6 @@ export default function AddProductPage() {
         [name]: type === "checkbox" ? checked : value,
       };
 
-      // Auto-validate salePrice when price changes
       if (name === "price" && newForm.salePrice) {
         const priceNum = parseFloat(value) || 0;
         const salePriceNum = parseFloat(newForm.salePrice) || 0;
@@ -550,7 +570,6 @@ export default function AddProductPage() {
         }
       }
 
-      // Auto-validate salePrice when salePrice changes
       if (name === "salePrice" && value && newForm.price) {
         const priceNum = parseFloat(newForm.price) || 0;
         const salePriceNum = parseFloat(value) || 0;
@@ -609,7 +628,6 @@ export default function AddProductPage() {
     setImages((prev) => prev.filter((img) => img.id !== id));
   };
 
-  // Fix the moveImage function
   const moveImage = (index, direction) => {
     if (direction === -1 && index === 0) return;
     if (direction === 1 && index === images.length - 1) return;
@@ -1029,6 +1047,53 @@ export default function AddProductPage() {
                 </div>
               </div>
             </div>
+
+            {/* Shipping Information - New Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-secondary flex items-center gap-2">
+                <i className="fa-solid fa-truck text-primary"></i>
+                Shipping Information
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-secondary">
+                    Inside Dhaka Shipping (৳)
+                  </label>
+                  <input
+                    type="number"
+                    name="shippingInsideDhaka"
+                    placeholder="0"
+                    min="0"
+                    value={form.shippingInsideDhaka}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary/30 focus:outline-none transition"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Shipping fee for Dhaka city area
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-secondary">
+                    Outside Dhaka Shipping (৳)
+                  </label>
+                  <input
+                    type="number"
+                    name="shippingOutsideDhaka"
+                    placeholder="60"
+                    min="0"
+                    value={form.shippingOutsideDhaka}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary/30 focus:outline-none transition"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Shipping fee for outside Dhaka
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Info Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-secondary flex items-center gap-2">
@@ -1054,19 +1119,19 @@ export default function AddProductPage() {
                     <div className="relative">
                       <input
                         type="checkbox"
-                        name="freeShipping"
-                        checked={form.freeShipping}
+                        name="freeShippingInfo"
+                        checked={form.freeShippingInfo}
                         onChange={handleChange}
                         className="sr-only"
                       />
                       <div
                         className={`w-10 h-5 rounded-full transition ${
-                          form.freeShipping ? "bg-blue-600" : "bg-gray-300"
+                          form.freeShippingInfo ? "bg-blue-600" : "bg-gray-300"
                         }`}
                       ></div>
                       <div
                         className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                          form.freeShipping ? "translate-x-5" : ""
+                          form.freeShippingInfo ? "translate-x-5" : ""
                         }`}
                       ></div>
                     </div>
@@ -1154,6 +1219,7 @@ export default function AddProductPage() {
                 </div>
               </div>
             </div>
+
             {/* Additional Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -1380,7 +1446,6 @@ export default function AddProductPage() {
           </form>
         </div>
 
-        {/* Quick Info Preview */}
         {/* Preview Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-fit sticky top-6">
           <div className="bg-linear-to-r from-green-500 to-emerald-600 p-6">
@@ -1482,13 +1547,43 @@ export default function AddProductPage() {
                 </div>
               </div>
 
+              {/* Shipping Info Preview */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <i className="fa-solid fa-truck text-primary"></i>
+                  Shipping Information
+                </p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Inside Dhaka:</span>
+                    <span className="font-medium text-gray-800">
+                      ৳{form.shippingInsideDhaka}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Outside Dhaka:</span>
+                    <span className="font-medium text-gray-800">
+                      ৳{form.shippingOutsideDhaka}
+                    </span>
+                  </div>
+                  {form.freeShippingInfo && (
+                    <div className="text-green-600 text-xs mt-1">
+                      <i className="fa-solid fa-tag mr-1"></i>
+                      Free shipping available!
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Quick Info Preview */}
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-linear-to-br from-blue-50 to-blue-100 p-3 rounded-xl text-center">
                     <i className="fa-solid fa-truck text-primary text-lg mb-1"></i>
                     <p className="text-xs text-primary font-medium">
-                      {form.freeShipping ? "Free Shipping" : "Paid Shipping"}
+                      {form.freeShippingInfo
+                        ? "Free Shipping"
+                        : "Paid Shipping"}
                     </p>
                   </div>
                   <div className="bg-linear-to-br from-purple-50 to-purple-100 p-3 rounded-xl text-center">
@@ -1508,7 +1603,6 @@ export default function AddProductPage() {
                   </div>
                 </div>
 
-                {/* Additional Info Row */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-linear-to-br from-green-50 to-green-100 p-2 rounded-lg text-center">
                     <i className="fa-solid fa-clock text-green-600 text-sm mb-0.5"></i>
@@ -1575,7 +1669,6 @@ export default function AddProductPage() {
                   <Btn
                     variant="info"
                     onClick={() => {
-                      // Find the product to get its slug
                       const product = products.find(
                         (p) => p._id === currentProductId,
                       );
@@ -1584,7 +1677,6 @@ export default function AddProductPage() {
                           `/products/${currentProductId}/${product.slug}`,
                         );
                       } else {
-                        // Fallback to just ID if no slug
                         navigate(`/products/${currentProductId}`);
                       }
                     }}

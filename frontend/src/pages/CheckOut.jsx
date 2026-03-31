@@ -47,7 +47,12 @@ function CheckOut() {
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedUpazila, setSelectedUpazila] = useState("");
 
-  // Calculate totals based on whether it's an existing order or new cart
+  // Shipping calculation state
+  const [calculatedShipping, setCalculatedShipping] = useState(0);
+  const [shippingBreakdown, setShippingBreakdown] = useState([]);
+  const [isInsideDhaka, setIsInsideDhaka] = useState(false);
+
+  // Calculate subtotal
   const subtotal = isExistingOrderPayment
     ? existingOrder.subtotal
     : cart.reduce(
@@ -56,11 +61,78 @@ function CheckOut() {
         0,
       );
 
-  // Shipping fee set to 0 initially
-  const shipping = isExistingOrderPayment ? existingOrder.shippingFee || 0 : 0;
+  // Calculate shipping based on products and selected division
+  const calculateShipping = useCallback(() => {
+    if (isExistingOrderPayment) {
+      setCalculatedShipping(existingOrder.shippingFee || 0);
+      return;
+    }
+
+    if (!cart.length || !selectedDivision) {
+      setCalculatedShipping(0);
+      setShippingBreakdown([]);
+      return;
+    }
+
+    // Check if selected division is Dhaka
+    const isDhaka = selectedDivision === "dhaka";
+    setIsInsideDhaka(isDhaka);
+
+    let totalShipping = 0;
+    const breakdown = [];
+
+    cart.forEach((item) => {
+      let itemShipping = 0;
+      const quantity = item.quantity;
+
+      // Check if product has free shipping from quickInfo
+      if (item.quickInfo?.freeShipping === true) {
+        itemShipping = 0;
+      }
+      // Check if product has custom shipping fees
+      else if (
+        isDhaka &&
+        item.shippingInsideDhaka !== undefined &&
+        item.shippingInsideDhaka !== null
+      ) {
+        itemShipping = item.shippingInsideDhaka * quantity;
+      } else if (
+        !isDhaka &&
+        item.shippingOutsideDhaka !== undefined &&
+        item.shippingOutsideDhaka !== null
+      ) {
+        itemShipping = item.shippingOutsideDhaka * quantity;
+      }
+      // Default fallback shipping
+      else {
+        itemShipping = isDhaka ? 0 : 60 * quantity;
+      }
+
+      totalShipping += itemShipping;
+
+      breakdown.push({
+        name: item.name,
+        quantity: quantity,
+        shippingPerUnit: isDhaka
+          ? item.shippingInsideDhaka || 0
+          : item.shippingOutsideDhaka || 60,
+        totalShipping: itemShipping,
+        freeShipping: item.quickInfo?.freeShipping === true,
+      });
+    });
+
+    setCalculatedShipping(totalShipping);
+    setShippingBreakdown(breakdown);
+  }, [cart, selectedDivision, isExistingOrderPayment, existingOrder]);
+
+  // Recalculate shipping when division or cart changes
+  useEffect(() => {
+    calculateShipping();
+  }, [selectedDivision, cart, calculateShipping]);
+
   const total = isExistingOrderPayment
     ? existingOrder.total
-    : subtotal + shipping;
+    : subtotal + calculatedShipping;
 
   // Validate form
   const validateForm = () => {
@@ -104,14 +176,7 @@ function CheckOut() {
   };
 
   // Update form when location selectors change
-  useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      division: selectedDivision,
-      district: selectedDistrict,
-      upazila: selectedUpazila,
-    }));
-    // Clear location errors when values are filled
+  const clearLocationErrors = useCallback(() => {
     if (selectedDivision && formErrors.division) {
       setFormErrors((prev) => ({ ...prev, division: "" }));
     }
@@ -121,7 +186,29 @@ function CheckOut() {
     if (selectedUpazila && formErrors.upazila) {
       setFormErrors((prev) => ({ ...prev, upazila: "" }));
     }
-  }, [selectedDivision, selectedDistrict, selectedUpazila]);
+  }, [
+    selectedDivision,
+    selectedDistrict,
+    selectedUpazila,
+    formErrors.division,
+    formErrors.district,
+    formErrors.upazila,
+  ]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      division: selectedDivision,
+      district: selectedDistrict,
+      upazila: selectedUpazila,
+    }));
+    clearLocationErrors();
+  }, [
+    selectedDivision,
+    selectedDistrict,
+    selectedUpazila,
+    clearLocationErrors,
+  ]);
 
   // Load user profile and existing order data
   useEffect(() => {
@@ -234,7 +321,7 @@ function CheckOut() {
             country: form.country,
           },
           subtotal,
-          shippingFee: shipping,
+          shippingFee: calculatedShipping,
           total,
           payment: {
             method: paymentMethod,
@@ -460,6 +547,16 @@ function CheckOut() {
                           Remove
                         </button>
                       </div>
+                      {/* Show shipping info per product */}
+                      {!isExistingOrderPayment && selectedDivision && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          <i className="fa-solid fa-truck mr-1"></i>
+                          Shipping: ৳
+                          {selectedDivision === "dhaka"
+                            ? (item.shippingInsideDhaka || 0) * item.quantity
+                            : (item.shippingOutsideDhaka || 60) * item.quantity}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))
@@ -480,10 +577,70 @@ function CheckOut() {
                 <span>Subtotal</span>
                 <span>৳{subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Shipping Fee</span>
-                <span>৳{shipping.toLocaleString()}</span>
+
+              {/* Shipping Section */}
+              <div className="border-t border-gray-100 pt-2">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600">Shipping Fee</span>
+                  <span className="font-semibold text-gray-800">
+                    {calculatedShipping > 0
+                      ? `৳${calculatedShipping.toLocaleString()}`
+                      : "Free"}
+                  </span>
+                </div>
+
+                {/* Shipping Breakdown */}
+                {!isExistingOrderPayment &&
+                  selectedDivision &&
+                  shippingBreakdown.length > 0 &&
+                  calculatedShipping > 0 && (
+                    <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                      <p className="text-xs font-medium text-gray-700 mb-2">
+                        Shipping Breakdown:
+                      </p>
+                      <div className="space-y-1">
+                        {shippingBreakdown.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex justify-between text-xs"
+                          >
+                            <span className="text-gray-600">
+                              {item.name} (x{item.quantity})
+                              {item.freeShipping && (
+                                <span className="text-green-600 ml-1">
+                                  (Free)
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-medium text-gray-800">
+                              {item.freeShipping
+                                ? "Free"
+                                : `৳${item.totalShipping}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between text-xs font-medium">
+                        <span>Total Shipping</span>
+                        <span className="text-primary">
+                          ৳{calculatedShipping}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Shipping location info */}
+                {selectedDivision && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    <i className="fa-solid fa-location-dot mr-1"></i>
+                    Shipping to:{" "}
+                    {selectedDivision === "dhaka"
+                      ? "Inside Dhaka"
+                      : "Outside Dhaka"}
+                  </p>
+                )}
               </div>
+
               <div className="border-t border-gray-100 pt-3">
                 <div className="flex justify-between font-semibold text-gray-800">
                   <span>Total</span>
@@ -592,8 +749,8 @@ function CheckOut() {
                       </p>
                     )}
                   </div>
+
                   {/* Street Address */}
-                  {/* Address Field */}
                   <div>
                     <input
                       type="text"
