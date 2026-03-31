@@ -265,7 +265,6 @@ export const updateUser = async (req, res) => {
     const {
       phoneNumber,
       address,
-      city,
       postalCode,
       division,
       district,
@@ -277,7 +276,6 @@ export const updateUser = async (req, res) => {
       {
         phoneNumber,
         address,
-        city,
         postalCode,
         division,
         district,
@@ -534,7 +532,7 @@ export const clearWishlist = async (req, res) => {
     await user.save();
 
     res.status(200).json({
-      status: "success",
+      status: "scityuccess",
       message: "Wishlist cleared successfully",
       data: {
         wishlist: [],

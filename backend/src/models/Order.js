@@ -43,7 +43,6 @@ const orderSchema = new mongoose.Schema(
       fullName: String,
       phone: String,
       addressLine: String,
-      city: String,
       postalCode: String,
       country: String,
       division: String,

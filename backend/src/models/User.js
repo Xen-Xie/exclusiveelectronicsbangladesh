@@ -85,12 +85,6 @@ const userSchema = new Schema(
       default: "",
       maxlength: [255, "Address cannot exceed 255 characters"],
     },
-    city: {
-      type: String,
-      trim: true,
-      default: "",
-      maxlength: [100, "City cannot exceed 100 characters"],
-    },
     postalCode: {
       type: String,
       trim: true,
