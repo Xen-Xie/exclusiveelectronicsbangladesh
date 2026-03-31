@@ -40,6 +40,8 @@ export const createProduct = async (req, res) => {
       featured,
       onSale,
       quickInfo,
+      shippingInsideDhaka,
+      shippingOutsideDhaka,
     } = req.body;
     let parsedQuickInfo = {};
     if (quickInfo) {
@@ -87,6 +89,12 @@ export const createProduct = async (req, res) => {
       onSale: onSale === "true" || onSale === true,
       images: images,
       quickInfo: parsedQuickInfo,
+      shippingInsideDhaka:
+        shippingInsideDhaka !== undefined ? parseFloat(shippingInsideDhaka) : 0,
+      shippingOutsideDhaka:
+        shippingOutsideDhaka !== undefined
+          ? parseFloat(shippingOutsideDhaka)
+          : 60,
     });
 
     await newProduct.save();
@@ -194,6 +202,8 @@ export const updateProduct = async (req, res) => {
       featured,
       onSale,
       quickInfo,
+      shippingInsideDhaka,
+      shippingOutsideDhaka,
     } = req.body;
 
     // Get the current product
@@ -260,7 +270,7 @@ export const updateProduct = async (req, res) => {
       }
       updateData.tags = parsedTags;
     }
-    // Handle quickInfo - Add this
+    // Handle quickInfo
     if (quickInfo !== undefined) {
       let parsedQuickInfo = {};
       if (typeof quickInfo === "string") {
@@ -273,6 +283,13 @@ export const updateProduct = async (req, res) => {
         parsedQuickInfo = quickInfo;
       }
       updateData.quickInfo = parsedQuickInfo;
+    }
+    // Handle shipping fields
+    if (shippingInsideDhaka !== undefined) {
+      updateData.shippingInsideDhaka = parseFloat(shippingInsideDhaka);
+    }
+    if (shippingOutsideDhaka !== undefined) {
+      updateData.shippingOutsideDhaka = parseFloat(shippingOutsideDhaka);
     }
     // findByIdAndUpdate with runValidators: FALSE to bypass schema validation
     const product = await Product.findByIdAndUpdate(req.params.id, updateData, {

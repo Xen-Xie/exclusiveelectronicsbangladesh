@@ -129,6 +129,30 @@ const productSchema = new mongoose.Schema({
       default: "1 year",
     },
   },
+
+  shippingFee: {
+    type: Number,
+    default: 0,
+    min: [0, "Shipping fee cannot be negative"],
+    description: "Base shipping fee for this product",
+  },
+  shippingInsideDhaka: {
+    type: Number,
+    default: 0,
+    min: [0, "Shipping fee cannot be negative"],
+    description: "Shipping fee for inside Dhaka",
+  },
+  shippingOutsideDhaka: {
+    type: Number,
+    default: 60,
+    min: [0, "Shipping fee cannot be negative"],
+    description: "Shipping fee for outside Dhaka",
+  },
+  freeShipping: {
+    type: Boolean,
+    default: false,
+    description: "Whether this product has free shipping",
+  },
 });
 
 // Pre-save middleware to update timestamps and handle slug/sale logic
