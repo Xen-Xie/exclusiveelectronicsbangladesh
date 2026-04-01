@@ -85,6 +85,7 @@ export const createOrder = async (req, res) => {
         originalPrice: product.price,
         qty: item.qty,
         sku: product.sku || "",
+        color: item.color || { name: "", code: "", image: "" },
       });
     }
 

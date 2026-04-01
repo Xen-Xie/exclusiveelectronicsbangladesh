@@ -12,6 +12,11 @@ const orderItemSchema = new mongoose.Schema({
   originalPrice: { type: Number },
   qty: { type: Number, min: 1, required: true },
   sku: String,
+  color: {
+    name: { type: String, default: "" },
+    code: { type: String, default: "" },
+    image: { type: String, default: "" },
+  },
 });
 
 const paymentSchema = new mongoose.Schema({

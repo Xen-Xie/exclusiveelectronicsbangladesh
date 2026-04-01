@@ -61,6 +61,7 @@ const productSchema = new mongoose.Schema({
     {
       url: { type: String, required: true },
       public_id: { type: String, required: true },
+      color: { type: String, default: "" }, // ADD THIS FIELD
     },
   ],
   status: {
@@ -152,6 +153,13 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
     description: "Whether this product has free shipping",
+  },
+  colorFamily: {
+    type: String,
+    trim: true,
+    default: "",
+    description:
+      "Color family of the product (e.g., Black, White, Red, Blue, etc.)",
   },
 });
 
