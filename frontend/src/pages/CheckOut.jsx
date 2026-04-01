@@ -779,26 +779,38 @@ function CheckOut() {
                   Payment Method
                 </h3>
                 <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === "ssl"}
-                      onChange={() => setPaymentMethod("ssl")}
-                      className="w-4 h-4 text-primary"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <i className="fa-solid fa-credit-card text-primary"></i>
-                        <span className="font-medium">Online Payment</span>
+                  {/* Online Payment - Coming Soon */}
+                  <div className="relative group">
+                    <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed opacity-75">
+                      <input
+                        type="radio"
+                        name="payment"
+                        disabled
+                        className="w-4 h-4 text-gray-400 cursor-not-allowed"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-credit-card text-gray-400"></i>
+                          <span className="font-medium text-gray-500">
+                            Online Payment
+                          </span>
+                          <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            Coming Soon
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          SSLCommerz - Credit card, Mobile banking, Internet
+                          banking
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        SSLCommerz - Credit card, Mobile banking, Internet
-                        banking
-                      </p>
                     </div>
-                  </label>
+                    {/* Tooltip on hover */}
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Coming soon! Please check back later
+                    </div>
+                  </div>
 
+                  {/* Cash on Delivery - Active */}
                   <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                     <input
                       type="radio"
@@ -811,6 +823,9 @@ function CheckOut() {
                       <div className="flex items-center gap-2">
                         <i className="fa-solid fa-truck text-primary"></i>
                         <span className="font-medium">Cash on Delivery</span>
+                        <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                          Available
+                        </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
                         Pay when you receive the order
@@ -818,24 +833,34 @@ function CheckOut() {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === "manual"}
-                      onChange={() => setPaymentMethod("manual")}
-                      className="w-4 h-4 text-primary"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <i className="fa-solid fa-building-columns text-primary"></i>
-                        <span className="font-medium">Manual Payment</span>
+                  {/* Manual Payment - Coming Soon */}
+                  <div className="relative group">
+                    <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed opacity-75">
+                      <input
+                        type="radio"
+                        name="payment"
+                        disabled
+                        className="w-4 h-4 text-gray-400 cursor-not-allowed"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-building-columns text-gray-400"></i>
+                          <span className="font-medium text-gray-500">
+                            Manual Payment
+                          </span>
+                          <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            Coming Soon
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Bank transfer or other methods
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Bank transfer or other methods
-                      </p>
                     </div>
-                  </label>
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Coming soon! Please check back later
+                    </div>
+                  </div>
                 </div>
 
                 <Btn
