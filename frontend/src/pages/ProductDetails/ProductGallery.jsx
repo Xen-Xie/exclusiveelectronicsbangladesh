@@ -6,9 +6,21 @@ function ProductGallery({
   setSelectedImageIndex,
   shareProduct,
   navigate,
+  selectedColor,
+  setSelectedColor,
 }) {
   const images = product?.images || [];
   const mainImage = images[selectedImageIndex]?.url || "/placeholder.jpg";
+
+  // Derive unique color options from images that have a color set
+  const colorOptions = images.reduce((acc, img) => {
+    if (img.color && img.color.trim() !== "" && !acc.includes(img.color)) {
+      acc.push(img.color);
+    }
+    return acc;
+  }, []);
+
+  const hasColors = colorOptions.length > 0;
 
   return (
     <div className="space-y-4">
@@ -56,7 +68,7 @@ function ProductGallery({
               <Btn
                 onClick={() =>
                   setSelectedImageIndex((prev) =>
-                    prev > 0 ? prev - 1 : images.length - 1
+                    prev > 0 ? prev - 1 : images.length - 1,
                   )
                 }
                 className="p-2 rounded-lg bg-secondary/10 hover:bg-secondary/20 text-secondary whitespace-nowrap"
@@ -67,7 +79,7 @@ function ProductGallery({
               <Btn
                 onClick={() =>
                   setSelectedImageIndex((prev) =>
-                    prev < images.length - 1 ? prev + 1 : 0
+                    prev < images.length - 1 ? prev + 1 : 0,
                   )
                 }
                 className="p-2 rounded-lg bg-secondary/10 hover:bg-secondary/20 text-secondary whitespace-nowrap"
@@ -97,6 +109,52 @@ function ProductGallery({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Color Selector — only shown when at least one image has a color */}
+      {hasColors && (
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center gap-2">
+            <i className="fa-solid fa-palette text-primary text-sm"></i>
+            <p className="text-sm font-medium text-secondary">
+              Color
+              {selectedColor && (
+                <span className="ml-2 font-semibold text-classic">
+                  — {selectedColor}
+                </span>
+              )}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {colorOptions.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() =>
+                  setSelectedColor(selectedColor === color ? "" : color)
+                }
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all duration-200 ${
+                  selectedColor === color
+                    ? "border-primary bg-primary/10 text-primary shadow-sm scale-105"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-primary/50 hover:bg-gray-50"
+                }`}
+              >
+                {selectedColor === color && (
+                  <i className="fa-solid fa-check text-xs mr-1.5"></i>
+                )}
+                {color}
+              </button>
+            ))}
+          </div>
+
+          {/* Prompt if no color selected */}
+          {!selectedColor && (
+            <p className="text-xs text-gray-400">
+              Please select a color option
+            </p>
+          )}
         </div>
       )}
 

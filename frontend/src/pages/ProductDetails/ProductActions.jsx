@@ -8,8 +8,8 @@ function ProductActions({
   handleAddToCart,
   handleBuyNow,
   addingToCart,
+  selectedColor,
 }) {
-  // Define handleQuantityChange inside the main component
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change;
     if (newQuantity >= 1 && newQuantity <= availableStock) {
@@ -19,6 +19,16 @@ function ProductActions({
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Selected Color Badge */}
+      {selectedColor && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl w-fit">
+          <i className="fa-solid fa-circle-check text-primary text-sm"></i>
+          <span className="text-sm font-medium text-primary">
+            {selectedColor}
+          </span>
+        </div>
+      )}
+
       {/* Quantity Selector */}
       <QuantitySelector
         quantity={quantity}
@@ -29,8 +39,8 @@ function ProductActions({
 
       {/* Action Buttons */}
       <ActionButtons
-        handleAddToCart={handleAddToCart}
-        handleBuyNow={handleBuyNow}
+        handleAddToCart={() => handleAddToCart(selectedColor)}
+        handleBuyNow={() => handleBuyNow(selectedColor)}
         availableStock={availableStock}
         addingToCart={addingToCart}
       />
@@ -47,7 +57,6 @@ function QuantitySelector({
   availableStock,
   product,
 }) {
-  // Calculate total price
   const calculateTotal = () => {
     const price =
       product.onSale && product.salePrice ? product.salePrice : product.price;

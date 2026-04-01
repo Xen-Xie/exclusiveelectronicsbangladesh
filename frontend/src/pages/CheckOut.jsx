@@ -85,12 +85,9 @@ function CheckOut() {
       let itemShipping = 0;
       const quantity = item.quantity;
 
-      // Check if product has free shipping from quickInfo
       if (item.quickInfo?.freeShipping === true) {
         itemShipping = 0;
-      }
-      // Check if product has custom shipping fees
-      else if (
+      } else if (
         isDhaka &&
         item.shippingInsideDhaka !== undefined &&
         item.shippingInsideDhaka !== null
@@ -102,9 +99,7 @@ function CheckOut() {
         item.shippingOutsideDhaka !== null
       ) {
         itemShipping = item.shippingOutsideDhaka * quantity;
-      }
-      // Default fallback shipping
-      else {
+      } else {
         itemShipping = isDhaka ? 0 : 60 * quantity;
       }
 
@@ -112,7 +107,7 @@ function CheckOut() {
 
       breakdown.push({
         name: item.name,
-        quantity: quantity,
+        quantity,
         shippingPerUnit: isDhaka
           ? item.shippingInsideDhaka || 0
           : item.shippingOutsideDhaka || 60,
@@ -138,9 +133,7 @@ function CheckOut() {
   const validateForm = () => {
     const errors = {};
 
-    if (!form.fullName.trim()) {
-      errors.fullName = "Full name is required";
-    }
+    if (!form.fullName.trim()) errors.fullName = "Full name is required";
 
     if (!form.phone.trim()) {
       errors.phone = "Phone number is required";
@@ -149,21 +142,10 @@ function CheckOut() {
         "Please enter a valid Bangladesh phone number (e.g., 017xxxxxxxx)";
     }
 
-    if (!form.address.trim()) {
-      errors.address = "Address is required";
-    }
-
-    if (!form.division) {
-      errors.division = "Division is required";
-    }
-
-    if (!form.district) {
-      errors.district = "District is required";
-    }
-
-    if (!form.upazila) {
-      errors.upazila = "Upazila/Thana is required";
-    }
+    if (!form.address.trim()) errors.address = "Address is required";
+    if (!form.division) errors.division = "Division is required";
+    if (!form.district) errors.district = "District is required";
+    if (!form.upazila) errors.upazila = "Upazila/Thana is required";
 
     if (!form.postalCode.trim()) {
       errors.postalCode = "Postal code is required";
@@ -175,17 +157,13 @@ function CheckOut() {
     return Object.keys(errors).length === 0;
   };
 
-  // Update form when location selectors change
   const clearLocationErrors = useCallback(() => {
-    if (selectedDivision && formErrors.division) {
+    if (selectedDivision && formErrors.division)
       setFormErrors((prev) => ({ ...prev, division: "" }));
-    }
-    if (selectedDistrict && formErrors.district) {
+    if (selectedDistrict && formErrors.district)
       setFormErrors((prev) => ({ ...prev, district: "" }));
-    }
-    if (selectedUpazila && formErrors.upazila) {
+    if (selectedUpazila && formErrors.upazila)
       setFormErrors((prev) => ({ ...prev, upazila: "" }));
-    }
   }, [
     selectedDivision,
     selectedDistrict,
@@ -309,6 +287,10 @@ function CheckOut() {
             price: i.salePrice || i.price,
             qty: i.quantity,
             image: i.image,
+            // Pass selected color to backend
+            color: i.selectedColor
+              ? { name: i.selectedColor, code: "", image: "" }
+              : { name: "", code: "", image: "" },
           })),
           shippingAddress: {
             fullName: form.fullName,
@@ -442,6 +424,11 @@ function CheckOut() {
                     <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                       <img
                         src={
+                          (item.color?.name
+                            ? item.product?.images?.find(
+                                (img) => img.color === item.color.name,
+                              )?.url
+                            : null) ||
                           item.product?.images?.[0]?.url ||
                           item.image?.url ||
                           "/placeholder.jpg"
@@ -452,6 +439,13 @@ function CheckOut() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-800">{item.name}</h3>
+                      {/* Show color if set on existing order item */}
+                      {item.color?.name && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                          <i className="fa-solid fa-palette text-xs"></i>
+                          {item.color.name}
+                        </span>
+                      )}
                       <div className="mt-1 flex items-center gap-3">
                         <span className="text-sm text-gray-500">
                           Qty: {item.qty}
@@ -487,8 +481,13 @@ function CheckOut() {
                     <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                       <img
                         src={
-                          item.image?.url ||
+                          (item.selectedColor
+                            ? item.images?.find(
+                                (img) => img.color === item.selectedColor,
+                              )?.url
+                            : null) ||
                           item.images?.[0]?.url ||
+                          item.image?.url ||
                           "/placeholder.jpg"
                         }
                         alt={item.name}
@@ -497,10 +496,22 @@ function CheckOut() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-800">{item.name}</h3>
+
+                      {/* Show selected color badge */}
+                      {item.selectedColor && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                          <i className="fa-solid fa-palette text-xs"></i>
+                          {item.selectedColor}
+                        </span>
+                      )}
+
                       <div className="mt-2 flex items-center gap-2">
                         <button
                           onClick={() =>
-                            updateQty(item._id, Math.max(1, item.quantity - 1))
+                            updateQty(
+                              item._cartKey || item._id,
+                              Math.max(1, item.quantity - 1),
+                            )
                           }
                           className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                         >
@@ -512,7 +523,7 @@ function CheckOut() {
                         <button
                           onClick={() =>
                             updateQty(
-                              item._id,
+                              item._cartKey || item._id,
                               Math.min(item.stock, item.quantity + 1),
                             )
                           }
@@ -540,7 +551,7 @@ function CheckOut() {
                           )}
                         </p>
                         <button
-                          onClick={() => removeItem(item._id)}
+                          onClick={() => removeItem(item._cartKey || item._id)}
                           className="text-danger hover:text-danger/80 text-xs"
                         >
                           <i className="fa-regular fa-trash-alt mr-1"></i>{" "}

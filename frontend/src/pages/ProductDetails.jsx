@@ -29,7 +29,6 @@ function ProductDetails() {
   const { cart, addToCart } = useCart();
   const location = useLocation();
 
-  // State
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +37,8 @@ function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
   const [activeTab, setActiveTab] = useState("description");
+  const [selectedColor, setSelectedColor] = useState("");
 
-  // Review states
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState(null);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -49,36 +48,29 @@ function ProductDetails() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const reviewSectionRef = useRef(null);
 
-  // Review form states
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewImages, setReviewImages] = useState([]);
-  // Parse query parameter for tab on component mount and when location changes
+
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const tabParam = queryParams.get("tab");
-
-    // Set active tab based on URL parameter if valid
     if (tabParam && ["description", "specs", "reviews"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
-  // Automatically jump into review form when reviews tab is active and user can review
+
   useEffect(() => {
     if (activeTab === "reviews" && canReview?.canReview && !userReview) {
       setShowReviewForm(true);
     }
   }, [activeTab, canReview, userReview]);
-  // Parse query parameter for tab on component mount and when location changes
+
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const tabParam = queryParams.get("tab");
-
-    // Set active tab based on URL parameter if valid
     if (tabParam && ["description", "specs", "reviews"].includes(tabParam)) {
       setActiveTab(tabParam);
-
-      // If reviews tab, scroll to it after a short delay
       if (tabParam === "reviews") {
         setTimeout(() => {
           if (reviewSectionRef.current) {
@@ -91,7 +83,7 @@ function ProductDetails() {
       }
     }
   }, [location.search]);
-  // Helper functions
+
   const getDefaultReviewSummary = useCallback(
     () => ({
       averageRating: 0,
@@ -127,7 +119,6 @@ function ProductDetails() {
   const fetchRelatedProducts = useCallback(
     async (productData) => {
       if (!productData.category) return;
-
       try {
         const res = await axios.get(
           `${apiUrl}/api/products/category/${productData.category}`
@@ -147,7 +138,6 @@ function ProductDetails() {
       setLoading(true);
       const productData = await fetchProductData();
       if (!productData) return;
-
       setProduct(productData);
       fetchProductReviews(productData._id);
       fetchRelatedProducts(productData);
@@ -160,7 +150,6 @@ function ProductDetails() {
 
   const checkCanReview = useCallback(async () => {
     if (!user || !token || !product?._id) return;
-
     try {
       const res = await axios.get(
         `${apiUrl}/api/reviews/can-review/${product._id}`,
@@ -177,24 +166,33 @@ function ProductDetails() {
     }
   }, [user, token, product?._id, apiUrl]);
 
-  // Fetch product
   useEffect(() => {
     fetchProduct();
   }, [fetchProduct]);
 
-  // Check review eligibility
   useEffect(() => {
     if (product && product._id) {
       checkCanReview();
     }
   }, [product, user, token, checkCanReview]);
 
+  // Reset selected color when product changes
+  useEffect(() => {
+    setSelectedColor("");
+  }, [id]);
+
   const handleAddToCart = async () => {
     if (!product) return;
 
     try {
       setAddingToCart(true);
-      const existingInCart = cart.find((item) => item._id === product._id);
+
+      // Cart key includes color so same product in different colors are separate entries
+      const cartKey = selectedColor
+        ? `${product._id}_${selectedColor}`
+        : product._id;
+
+      const existingInCart = cart.find((item) => item._cartKey === cartKey);
       const existingQty = existingInCart ? existingInCart.quantity : 0;
       const totalQty = existingQty + quantity;
 
@@ -208,12 +206,13 @@ function ProductDetails() {
       addToCart({
         ...product,
         quantity,
+        _cartKey: cartKey,
+        selectedColor: selectedColor || "",
         selectedImage: product.images?.[0]?.url || "/placeholder.jpg",
         salePrice:
           product.onSale && product.salePrice ? product.salePrice : null,
       });
 
-      // Show success feedback
       const event = new CustomEvent("cart:add", { detail: product });
       window.dispatchEvent(event);
     } catch (err) {
@@ -233,9 +232,16 @@ function ProductDetails() {
 
     try {
       setAddingToCart(true);
+
+      const cartKey = selectedColor
+        ? `${product._id}_${selectedColor}`
+        : product._id;
+
       addToCart({
         ...product,
         quantity: Math.min(quantity, product.stock || 0),
+        _cartKey: cartKey,
+        selectedColor: selectedColor || "",
         selectedImage: product.images?.[0]?.url || "/placeholder.jpg",
         salePrice:
           product.onSale && product.salePrice ? product.salePrice : null,
@@ -254,12 +260,10 @@ function ProductDetails() {
       alert("Please write a review of at least 10 characters");
       return;
     }
-
     if (!user) {
       navigate("/login");
       return;
     }
-
     if (!product || !product._id) {
       alert("Product information is missing");
       return;
@@ -270,7 +274,6 @@ function ProductDetails() {
       const formData = new FormData();
       formData.append("rating", reviewRating);
       formData.append("comment", reviewComment);
-
       reviewImages.forEach((file) => {
         formData.append("reviewImages", file);
       });
@@ -309,12 +312,10 @@ function ProductDetails() {
 
   const shareProduct = () => {
     if (!product) return;
-
     const url = window.location.href;
     const price =
       product.onSale && product.salePrice ? product.salePrice : product.price;
     const text = `Check out ${product.name} - ৳${price || "0"}`;
-
     if (navigator.share) {
       navigator.share({ title: product.name, text, url });
     } else {
@@ -325,12 +326,13 @@ function ProductDetails() {
 
   const getAvailableStock = () => {
     if (!product) return 0;
-    const cartItem = cart.find((item) => item._id === product._id);
-    const reservedInCart = cartItem ? cartItem.quantity : 0;
-    return Math.max(0, (product.stock || 0) - reservedInCart);
+    // Sum quantity across all cart entries for this product (all colors)
+    const reserved = cart
+      .filter((item) => item._id === product._id)
+      .reduce((sum, item) => sum + item.quantity, 0);
+    return Math.max(0, (product.stock || 0) - reserved);
   };
 
-  // Loading and error states
   if (loading) return <LoadingSkeleton />;
   if (error || !product)
     return <ErrorState error={error} navigate={navigate} />;
@@ -341,7 +343,6 @@ function ProductDetails() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 font-urbanist">
-      {/* Breadcrumb */}
       <Breadcrumb product={product} navigate={navigate} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -353,13 +354,14 @@ function ProductDetails() {
             setSelectedImageIndex={setSelectedImageIndex}
             shareProduct={shareProduct}
             navigate={navigate}
+            selectedColor={selectedColor}
+            setSelectedColor={setSelectedColor}
           />
         </div>
 
         {/* Right Column - Product Info & Actions */}
         <div className="lg:col-span-1">
           <div className="sticky top-24 space-y-6">
-            {/* Product Basic Info */}
             <ProductInfo
               product={product}
               reviewSummary={reviewSummary}
@@ -367,7 +369,6 @@ function ProductDetails() {
               reservedInCart={reservedInCart}
             />
 
-            {/* Product Actions */}
             <ProductActions
               product={product}
               quantity={quantity}
@@ -376,14 +377,14 @@ function ProductDetails() {
               handleAddToCart={handleAddToCart}
               handleBuyNow={handleBuyNow}
               addingToCart={addingToCart}
+              selectedColor={selectedColor}
             />
           </div>
         </div>
 
-        {/* Full Width Content Below - Tabs */}
+        {/* Tabs */}
         <div className="lg:col-span-3">
           <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
           <div className="mt-6">
             <ProductTabsContent
               activeTab={activeTab}
@@ -413,7 +414,6 @@ function ProductDetails() {
         </div>
       </div>
 
-      {/* Related Products */}
       {relatedProducts.length > 0 && (
         <RelatedProducts
           relatedProducts={relatedProducts}
@@ -422,7 +422,6 @@ function ProductDetails() {
         />
       )}
 
-      {/* Recently Viewed Products */}
       {user && token && (
         <RecentlyViewedProducts userId={user._id} token={token} />
       )}
@@ -430,7 +429,6 @@ function ProductDetails() {
   );
 }
 
-// Small helper components
 function Breadcrumb({ product, navigate }) {
   return (
     <nav className="flex items-center text-sm text-gray-600 mb-8">

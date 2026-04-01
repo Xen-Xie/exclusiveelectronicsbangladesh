@@ -12,37 +12,42 @@ export function CartProvider({ children }) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // Add product to cart
   const addToCart = (product) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item._id === product._id);
+      // Use _cartKey (product + color combo) for deduplication
+      // so same product in different colors are stored as separate entries
+      const key = product._cartKey || product._id;
+      const existing = prev.find((item) => (item._cartKey || item._id) === key);
       if (existing) {
         return prev.map((item) =>
-          item._id === product._id
+          (item._cartKey || item._id) === key
             ? { ...item, quantity: item.quantity + product.quantity }
-            : item
+            : item,
         );
       } else {
         return [...prev, product];
       }
     });
   };
-    // Remove one item
-  const removeItem = (id) => {
-    setCart((prev) => prev.filter((item) => item._id !== id));
+
+  const removeItem = (cartKey) => {
+    setCart((prev) =>
+      prev.filter((item) => (item._cartKey || item._id) !== cartKey),
+    );
   };
 
-   // Clear all items
+  // Clear all items
   const clearCart = () => {
     setCart([]);
   };
 
-  // Update quantity
-  const updateQty = (id, qty) => {
+  const updateQty = (cartKey, qty) => {
     setCart((prev) =>
       prev.map((item) =>
-        item._id === id ? { ...item, quantity: qty } : item
-      )
+        (item._cartKey || item._id) === cartKey
+          ? { ...item, quantity: qty }
+          : item,
+      ),
     );
   };
 
@@ -51,7 +56,9 @@ export function CartProvider({ children }) {
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cart, cartCount, addToCart, removeItem,clearCart, updateQty }}>
+    <CartContext.Provider
+      value={{ cart, cartCount, addToCart, removeItem, clearCart, updateQty }}
+    >
       {children}
     </CartContext.Provider>
   );

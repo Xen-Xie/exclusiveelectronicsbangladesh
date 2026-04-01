@@ -18,7 +18,7 @@ const parseTags = (s) =>
 const makeId = () => Math.random().toString(36).slice(2, 9);
 
 // Separate ImageThumbnails component
-const ImageThumbnails = ({ images, onRemove, onMove }) => {
+const ImageThumbnails = ({ images, onRemove, onMove, onColorChange }) => {
   const [dragItemIndex, setDragItemIndex] = useState(null);
 
   const handleDragStart = (e, index) => {
@@ -45,67 +45,79 @@ const ImageThumbnails = ({ images, onRemove, onMove }) => {
         {images.map((img, index) => (
           <div
             key={img.id}
-            className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+            className="flex flex-col gap-2 p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
           >
-            {/* Number badge */}
-            <div className="shrink-0 w-8 h-8 bg-primary text-primarybg rounded-full flex items-center justify-center text-sm font-semibold">
-              {index + 1}
-            </div>
+            <div className="flex items-center gap-3">
+              {/* Number badge */}
+              <div className="shrink-0 w-8 h-8 bg-primary text-primarybg rounded-full flex items-center justify-center text-sm font-semibold">
+                {index + 1}
+              </div>
 
-            {/* Image preview */}
-            <div className="w-16 h-16 rounded overflow-hidden border border-gray-300 shrink-0">
-              <img
-                src={img.url}
-                alt={`Preview ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
+              {/* Image preview */}
+              <div className="w-16 h-16 rounded overflow-hidden border border-gray-300 shrink-0">
+                <img
+                  src={img.url}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-            {/* File info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">
-                {img.file?.name || "Image"}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                {img.file && (
-                  <span className="text-xs text-gray-500">
-                    {(img.file.size / 1024 / 1024).toFixed(2)} MB
-                  </span>
+              {/* File info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">
+                  {img.file?.name || "Image"}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  {img.file && (
+                    <span className="text-xs text-gray-500">
+                      {(img.file.size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col gap-1">
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onMove(index, -1)}
+                    className="p-1.5 text-secondary rounded"
+                    aria-label="Move up"
+                  >
+                    <i className="fa-solid fa-arrow-up text-xs"></i>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onRemove(img.id)}
+                  className=" text-danger p-1.5 rounded"
+                  aria-label="Remove"
+                >
+                  <i className="fa-solid fa-trash text-xs"></i>
+                </button>
+                {index < images.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onMove(index, 1)}
+                    className="p-1.5 text-secondary rounded"
+                    aria-label="Move down"
+                  >
+                    <i className="fa-solid fa-arrow-down text-xs"></i>
+                  </button>
                 )}
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-col gap-1">
-              {index > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onMove(index, -1)}
-                  className="p-1.5 text-secondary rounded"
-                  aria-label="Move up"
-                >
-                  <i className="fa-solid fa-arrow-up text-xs"></i>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => onRemove(img.id)}
-                className=" text-danger p-1.5 rounded"
-                aria-label="Remove"
-              >
-                <i className="fa-solid fa-trash text-xs"></i>
-              </button>
-              {index < images.length - 1 && (
-                <button
-                  type="button"
-                  onClick={() => onMove(index, 1)}
-                  className="p-1.5 text-secondary rounded"
-                  aria-label="Move down"
-                >
-                  <i className="fa-solid fa-arrow-down text-xs"></i>
-                </button>
-              )}
-            </div>
+            {/* Color input - mobile */}
+            <input
+              type="text"
+              placeholder="Image color (optional, e.g. Red)"
+              value={img.color || ""}
+              onChange={(e) => onColorChange(img.id, e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs px-3 py-2 border border-gray-200 rounded-lg w-full focus:ring-1 focus:ring-primary/30 focus:outline-none"
+            />
           </div>
         ))}
       </div>
@@ -183,6 +195,16 @@ const ImageThumbnails = ({ images, onRemove, onMove }) => {
                 </div>
               )}
             </div>
+
+            {/* Color input - desktop */}
+            <input
+              type="text"
+              placeholder="Color (optional)"
+              value={img.color || ""}
+              onChange={(e) => onColorChange(img.id, e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg w-full mt-2 focus:ring-1 focus:ring-primary/30 focus:outline-none"
+            />
           </div>
         ))}
       </div>
@@ -196,7 +218,7 @@ export default function AddProductPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
 
-  // Form state - Updated with shipping fields
+  // Form state
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -217,6 +239,8 @@ export default function AddProductPage() {
     support: "24/7",
     deliveryTime: "3-5 business days",
     warranty: "1 year",
+    // Color family
+    colorFamily: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -269,7 +293,7 @@ export default function AddProductPage() {
     setIsSearching(searchTerm.trim().length > 0);
   };
 
-  // Handle form submission - Updated with shipping fields
+  // Handle form submission
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
@@ -277,7 +301,6 @@ export default function AddProductPage() {
       setLoading(true);
 
       const data = new FormData();
-
       const requestData = {};
 
       if (form.name) requestData.name = form.name;
@@ -288,7 +311,7 @@ export default function AddProductPage() {
       if (form.salePrice) {
         requestData.discountPrice = parseFloat(form.salePrice);
       } else {
-        requestData.discountPrice = null;
+        requestData.discountPrice = "";
       }
 
       if (form.stock) requestData.stock = parseInt(form.stock);
@@ -302,14 +325,6 @@ export default function AddProductPage() {
         parseFloat(form.shippingInsideDhaka) || 0;
       requestData.shippingOutsideDhaka =
         parseFloat(form.shippingOutsideDhaka) || 60;
-      if (form.shippingInsideDhaka !== undefined) {
-        requestData.shippingInsideDhaka =
-          parseFloat(form.shippingInsideDhaka) || 0;
-      }
-      if (form.shippingOutsideDhaka !== undefined) {
-        requestData.shippingOutsideDhaka =
-          parseFloat(form.shippingOutsideDhaka) || 60;
-      }
 
       // Quick Info fields
       requestData.quickInfo = JSON.stringify({
@@ -320,6 +335,9 @@ export default function AddProductPage() {
         warranty: form.warranty,
       });
 
+      // Color family
+      requestData.colorFamily = form.colorFamily || "";
+
       // Append to FormData
       Object.keys(requestData).forEach((key) => {
         if (requestData[key] !== null && requestData[key] !== undefined) {
@@ -327,11 +345,29 @@ export default function AddProductPage() {
         }
       });
 
-      // Append images
-      images.forEach((img) => {
-        if (img.file) {
-          data.append("images", img.file);
-        }
+      // Split images into new uploads vs existing (from server)
+      const newFiles = images.filter((img) => img.file);
+      const existingImgs = images.filter((img) => !img.file);
+
+      // Always send existingImages so backend can merge with any new uploads
+      data.append(
+        "existingImages",
+        JSON.stringify(
+          existingImgs.map((img) => ({
+            url: img.url,
+            public_id: img.public_id,
+            color: img.color || "",
+          })),
+        ),
+      );
+
+      // imageColors for newly uploaded files only
+      const imageColorsArray = newFiles.map((img) => img.color || "");
+      data.append("imageColors", JSON.stringify(imageColorsArray));
+
+      // Append new image files
+      newFiles.forEach((img) => {
+        data.append("images", img.file);
       });
 
       const authToken = token || localStorage.getItem("token");
@@ -352,7 +388,6 @@ export default function AddProductPage() {
         );
         message = "Product updated successfully!";
       } else {
-        // Create new product
         res = await axios.post(`${apiUrl}/api/products`, data, {
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -412,14 +447,13 @@ export default function AddProductPage() {
     }
   };
 
-  // Edit product - Updated with shipping fields
+  // Edit product
   const handleEdit = (product) => {
     setIsEditing(true);
     setCurrentProductId(product._id);
 
     const price = product.price || 0;
     const salePrice = product.salePrice || 0;
-
     const quickInfo = product.quickInfo || {};
 
     if (salePrice > price) {
@@ -457,12 +491,15 @@ export default function AddProductPage() {
       support: quickInfo.support || "24/7",
       deliveryTime: quickInfo.deliveryTime || "3-5 business days",
       warranty: quickInfo.warranty || "1 year",
+      colorFamily: product.colorFamily || "",
     });
 
+    // Preserve existing image colors when editing
     const imgs = (product.images || []).map((it) => ({
       id: makeId(),
       url: it.url,
       public_id: it.public_id,
+      color: it.color || "",
     }));
     setImages(imgs);
 
@@ -478,7 +515,7 @@ export default function AddProductPage() {
     }
   };
 
-  // Add quick info options
+  // Quick info options
   const returnPolicyOptions = [
     { value: "30-day", label: "30-Day Returns", icon: "fa-undo-alt" },
     { value: "14-day", label: "14-Day Returns", icon: "fa-undo-alt" },
@@ -542,6 +579,7 @@ export default function AddProductPage() {
       support: "24/7",
       deliveryTime: "3-5 business days",
       warranty: "1 year",
+      colorFamily: "",
     });
     setImages([]);
     setIsEditing(false);
@@ -591,6 +629,7 @@ export default function AddProductPage() {
       id: makeId(),
       file,
       url: URL.createObjectURL(file),
+      color: "",
     }));
     setImages((prev) => [...prev, ...newItems]);
   };
@@ -638,6 +677,13 @@ export default function AddProductPage() {
       [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
       return arr;
     });
+  };
+
+  // Per-image color change handler
+  const handleImageColorChange = (id, color) => {
+    setImages((prev) =>
+      prev.map((img) => (img.id === id ? { ...img, color } : img)),
+    );
   };
 
   // Add category to local state
@@ -1048,7 +1094,7 @@ export default function AddProductPage() {
               </div>
             </div>
 
-            {/* Shipping Information - New Section */}
+            {/* Shipping Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-secondary flex items-center gap-2">
                 <i className="fa-solid fa-truck text-primary"></i>
@@ -1256,6 +1302,24 @@ export default function AddProductPage() {
                     Separate tags with commas
                   </p>
                 </div>
+
+                {/* Color Family */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2 text-secondary">
+                    <i className="fa-solid fa-palette text-primary mr-1"></i>
+                    Color Family
+                  </label>
+                  <input
+                    name="colorFamily"
+                    placeholder="e.g. Black, Red, Multi-color"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-1 focus:ring-primary/30 focus:outline-none transition"
+                    value={form.colorFamily}
+                    onChange={handleChange}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Overall color family of this product (used for filtering)
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-6">
@@ -1369,7 +1433,8 @@ export default function AddProductPage() {
                           selected
                         </p>
                         <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                          Drag to reorder or use arrows to move
+                          Drag to reorder · use arrows to move · type a color
+                          label per image (optional)
                         </p>
                       </div>
                       <Btn
@@ -1385,6 +1450,7 @@ export default function AddProductPage() {
                       images={images}
                       onRemove={removeImage}
                       onMove={(index, direction) => moveImage(index, direction)}
+                      onColorChange={handleImageColorChange}
                     />
                   </div>
                 )}
@@ -1476,16 +1542,45 @@ export default function AddProductPage() {
               )}
             </div>
 
+            {/* Image color strip preview */}
+            {images.length > 0 && images.some((img) => img.color) && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  <i className="fa-solid fa-swatchbook text-primary mr-1"></i>
+                  Image Colors
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {images
+                    .filter((img) => img.color)
+                    .map((img, i) => (
+                      <span
+                        key={img.id}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium"
+                      >
+                        <span className="text-gray-400">#{i + 1}</span>
+                        {img.color}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
+
             {/* Product Info */}
             <div className="space-y-4">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 line-clamp-2">
                   {form.name || "Product Name"}
                 </h2>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                     {form.category || "Uncategorized"}
                   </span>
+                  {form.colorFamily && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium flex items-center gap-1">
+                      <i className="fa-solid fa-palette text-xs"></i>
+                      {form.colorFamily}
+                    </span>
+                  )}
                   {form.featured && (
                     <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium flex items-center gap-1">
                       <i className="fa-solid fa-star text-xs"></i>
