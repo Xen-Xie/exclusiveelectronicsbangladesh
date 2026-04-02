@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import StarRating from "./StarRating";
 
@@ -108,12 +109,23 @@ function PriceDisplay({ product }) {
 
 /* Stock Information */
 function StockInfo({ product, availableStock, reservedInCart }) {
+  const isLimited = product.status === "limited";
+  const isOutOfStock = !isLimited && availableStock <= 0;
+  const isInStock = !isLimited && availableStock > 0;
+
   return (
     <div className="mb-6 p-4 bg-linear-to-r from-gray-50 to-gray-100 rounded-xl">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            {availableStock > 0 ? (
+            {isLimited ? (
+              <>
+                <i className="fa-solid fa-fire text-amber-500"></i>
+                <span className="font-semibold text-amber-600">
+                  Limited Stock
+                </span>
+              </>
+            ) : isInStock ? (
               <>
                 <i className="fa-solid fa-check-circle text-success"></i>
                 <span className="font-semibold text-success">In Stock</span>
@@ -125,15 +137,25 @@ function StockInfo({ product, availableStock, reservedInCart }) {
               </>
             )}
           </div>
+
           <p className="text-sm text-gray-600">
-            {availableStock} units available
-            {reservedInCart > 0 && (
-              <span className="text-warning ml-2">
-                ({reservedInCart} in your cart)
-              </span>
+            {isLimited ? (
+              "Grab yours before it's gone"
+            ) : isInStock ? (
+              <>
+                {availableStock} units available
+                {reservedInCart > 0 && (
+                  <span className="text-warning ml-2">
+                    ({reservedInCart} in your cart)
+                  </span>
+                )}
+              </>
+            ) : (
+              "Currently unavailable"
             )}
           </p>
         </div>
+
         {product.sku && (
           <div className="text-right">
             <p className="text-sm text-secondary">SKU</p>
@@ -200,7 +222,7 @@ function QuickInfoContent({ product }) {
         </div>
       </div>
 
-      {/* Additional info row (optional) */}
+      {/* Additional info row */}
       {(quickInfo.deliveryTime || quickInfo.warranty) && (
         <div className="grid grid-cols-2 gap-3">
           {quickInfo.deliveryTime && (

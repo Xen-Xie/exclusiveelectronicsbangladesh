@@ -241,6 +241,8 @@ export default function AddProductPage() {
     warranty: "1 year",
     // Color family
     colorFamily: "",
+    // Product status
+    productStatus: "active",
   });
 
   const [loading, setLoading] = useState(false);
@@ -319,6 +321,9 @@ export default function AddProductPage() {
       if (form.tags) requestData.tags = form.tags;
       requestData.onSale = form.onSale;
       requestData.featured = form.featured;
+
+      // Product status
+      requestData.productStatus = form.productStatus;
 
       // Shipping fields
       requestData.shippingInsideDhaka =
@@ -492,6 +497,8 @@ export default function AddProductPage() {
       deliveryTime: quickInfo.deliveryTime || "3-5 business days",
       warranty: quickInfo.warranty || "1 year",
       colorFamily: product.colorFamily || "",
+      // Product status — map "soldout"/"archived" back to their values
+      productStatus: product.status || "active",
     });
 
     // Preserve existing image colors when editing
@@ -559,6 +566,37 @@ export default function AddProductPage() {
     { value: "no warranty", label: "No Warranty", icon: "fa-shield-alt" },
   ];
 
+  // Product status options
+  const productStatusOptions = [
+    {
+      value: "active",
+      label: "Active",
+      sub: "Stock count shown to customers",
+      color: "green",
+      activeClass: "border-green-500 bg-green-50",
+      dotClass: "bg-green-500",
+      textClass: "text-green-700",
+    },
+    {
+      value: "limited",
+      label: "Limited",
+      sub: 'Shows "Limited stock" — count hidden',
+      color: "amber",
+      activeClass: "border-amber-500 bg-amber-50",
+      dotClass: "bg-amber-500",
+      textClass: "text-amber-700",
+    },
+    {
+      value: "soldout",
+      label: "Sold out",
+      sub: "Marks product as unavailable",
+      color: "red",
+      activeClass: "border-red-500 bg-red-50",
+      dotClass: "bg-red-500",
+      textClass: "text-red-700",
+    },
+  ];
+
   // Reset form
   const resetForm = () => {
     setForm({
@@ -580,6 +618,7 @@ export default function AddProductPage() {
       deliveryTime: "3-5 business days",
       warranty: "1 year",
       colorFamily: "",
+      productStatus: "active",
     });
     setImages([]);
     setIsEditing(false);
@@ -714,6 +753,11 @@ export default function AddProductPage() {
     }
   };
 
+  // Derive the current status option for preview badge
+  const currentStatusOption = productStatusOptions.find(
+    (o) => o.value === form.productStatus,
+  );
+
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-8 font-urbanist">
       {/* Header Section */}
@@ -802,12 +846,16 @@ export default function AddProductPage() {
                         </span>
                         <span
                           className={`text-xs px-2 py-1 rounded-full ${
-                            product.stock > 0
+                            product.status === "limited"
+                              ? "bg-amber-100 text-amber-800"
+                              : product.stock > 0
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {product.stock > 0
+                          {product.status === "limited"
+                            ? "Limited"
+                            : product.stock > 0
                             ? `${product.stock} in stock`
                             : "Out of stock"}
                         </span>
@@ -1091,6 +1139,71 @@ export default function AddProductPage() {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Stock Status Selector */}
+              <div>
+                <label className="block text-sm font-medium mb-3 text-secondary">
+                  <i className="fa-solid fa-circle-dot text-primary mr-1.5"></i>
+                  Stock Status
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {productStatusOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() =>
+                        setForm((p) => ({ ...p, productStatus: opt.value }))
+                      }
+                      className={`relative border-2 rounded-xl p-3 text-center transition-all duration-200 cursor-pointer ${
+                        form.productStatus === opt.value
+                          ? opt.activeClass
+                          : "border-gray-200 bg-gray-50 hover:border-gray-300"
+                      }`}
+                    >
+                      {form.productStatus === opt.value && (
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full block bg-current opacity-70" />
+                      )}
+                      <span
+                        className={`block w-2.5 h-2.5 rounded-full mx-auto mb-2 ${opt.dotClass}`}
+                      />
+                      <p
+                        className={`font-semibold text-sm ${
+                          form.productStatus === opt.value
+                            ? opt.textClass
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {opt.label}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 leading-tight">
+                        {opt.sub}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Contextual hint */}
+                {form.productStatus === "limited" && (
+                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                    <i className="fa-solid fa-circle-info mt-0.5 shrink-0"></i>
+                    <span>
+                      Customers will see{" "}
+                      <strong>"Limited stock available"</strong> instead of a
+                      number. You still track the count internally.
+                    </span>
+                  </p>
+                )}
+                {form.productStatus === "soldout" && (
+                  <p className="mt-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                    <i className="fa-solid fa-circle-info mt-0.5 shrink-0"></i>
+                    <span>
+                      Product will be marked as <strong>unavailable</strong>.
+                      This is also set automatically when stock reaches 0 on
+                      active products.
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1575,6 +1688,25 @@ export default function AddProductPage() {
                   <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                     {form.category || "Uncategorized"}
                   </span>
+
+                  {/* Stock status badge */}
+                  {currentStatusOption && (
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${
+                        form.productStatus === "active"
+                          ? "bg-green-100 text-green-800"
+                          : form.productStatus === "limited"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${currentStatusOption.dotClass}`}
+                      />
+                      {currentStatusOption.label}
+                    </span>
+                  )}
+
                   {form.colorFamily && (
                     <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium flex items-center gap-1">
                       <i className="fa-solid fa-palette text-xs"></i>
@@ -1627,10 +1759,14 @@ export default function AddProductPage() {
                   <div className="bg-linear-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
                     <p className="text-sm text-blue-600 font-medium">Stock</p>
                     <p className="text-xl font-bold text-blue-800">
-                      {form.stock || "0"}
+                      {form.productStatus === "limited"
+                        ? "Limited"
+                        : form.stock || "0"}
                     </p>
                     <p className="text-xs text-blue-600 mt-1">
-                      units available
+                      {form.productStatus === "limited"
+                        ? "hidden from customers"
+                        : "units available"}
                     </p>
                   </div>
                   <div className="bg-linear-to-br from-gray-50 to-gray-100 p-4 rounded-xl">
@@ -1732,7 +1868,7 @@ export default function AddProductPage() {
               )}
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+              <div className="grid grid-cols-3 gap-3 pt-4 border-t">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     {images.length}
@@ -1744,6 +1880,20 @@ export default function AddProductPage() {
                     {form.onSale ? "Yes" : "No"}
                   </div>
                   <div className="text-xs text-gray-500">On Sale</div>
+                </div>
+                <div className="text-center">
+                  <div
+                    className={`text-lg font-bold ${
+                      form.productStatus === "active"
+                        ? "text-green-600"
+                        : form.productStatus === "limited"
+                        ? "text-amber-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {currentStatusOption?.label || "Active"}
+                  </div>
+                  <div className="text-xs text-gray-500">Status</div>
                 </div>
               </div>
             </div>
