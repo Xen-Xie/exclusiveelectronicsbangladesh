@@ -22,6 +22,20 @@ function ProductGallery({
 
   const hasColors = colorOptions.length > 0;
 
+  const handleColorSelect = (color) => {
+    // Toggle off if already selected
+    if (selectedColor === color) {
+      setSelectedColor("");
+      return;
+    }
+    setSelectedColor(color);
+    // Jump to the first image that matches this color
+    const matchIndex = images.findIndex((img) => img.color === color);
+    if (matchIndex !== -1) {
+      setSelectedImageIndex(matchIndex);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Main Image */}
@@ -94,7 +108,13 @@ function ProductGallery({
             {images.map((img, idx) => (
               <button
                 key={idx}
-                onClick={() => setSelectedImageIndex(idx)}
+                onClick={() => {
+                  setSelectedImageIndex(idx);
+                  // Sync selected color when manually clicking a thumbnail
+                  if (img.color && img.color.trim() !== "") {
+                    setSelectedColor(img.color);
+                  }
+                }}
                 className={`shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl border-2 overflow-hidden transition-all duration-300 ${
                   selectedImageIndex === idx
                     ? "border-primary shadow-md md:shadow-lg scale-105"
@@ -128,25 +148,29 @@ function ProductGallery({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {colorOptions.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() =>
-                  setSelectedColor(selectedColor === color ? "" : color)
-                }
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all duration-200 ${
-                  selectedColor === color
-                    ? "border-primary bg-primary/10 text-primary shadow-sm scale-105"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-primary/50 hover:bg-gray-50"
-                }`}
-              >
-                {selectedColor === color && (
-                  <i className="fa-solid fa-check text-xs mr-1.5"></i>
-                )}
-                {color}
-              </button>
-            ))}
+            {colorOptions.map((color) => {
+              // Find the first image for this color to use as a swatch thumbnail
+
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => handleColorSelect(color)}
+                  className={`flex items-center gap-2 pl-1 pr-3 py-1 rounded-full text-sm font-medium border-2 transition-all duration-200 whitespace-nowrap ${
+                    selectedColor === color
+                      ? "border-primary bg-primary/10 text-primary shadow-sm scale-105"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-primary/50 hover:bg-gray-50"
+                  }`}
+                >
+                  {/* Thumbnail swatch */}
+
+                  {selectedColor === color && (
+                    <i className="fa-solid fa-check text-xs"></i>
+                  )}
+                  {color}
+                </button>
+              );
+            })}
           </div>
 
           {/* Prompt if no color selected */}
