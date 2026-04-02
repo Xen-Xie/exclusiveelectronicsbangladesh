@@ -42,6 +42,7 @@ export const createProduct = async (req, res) => {
       shippingOutsideDhaka,
       colorFamily,
       imageColors,
+      productStatus,
     } = req.body;
 
     // Parse quickInfo
@@ -54,6 +55,16 @@ export const createProduct = async (req, res) => {
         console.error("Failed to parse quickInfo:", e);
         parsedQuickInfo = {};
       }
+    }
+
+    let stockStatus = "in_stock";
+    let finalStock = parseInt(stock) || 0;
+
+    if (productStatus === "limited") {
+      stockStatus = "limited_stock";
+      finalStock = parseInt(stock) || 0;
+    } else if (finalStock === 0) {
+      stockStatus = "out_of_stock";
     }
 
     // Parse imageColors array
@@ -103,7 +114,9 @@ export const createProduct = async (req, res) => {
       price: parseFloat(price),
       salePrice: discountPrice ? parseFloat(discountPrice) : null,
       category,
-      stock: parseInt(stock),
+      stock: finalStock,
+      status: productStatus === "limited" ? "limited" : "active",
+      stockStatus: stockStatus,
       sku: sku || undefined,
       tags: parsedTags,
       featured: featured === "true" || featured === true,
@@ -155,6 +168,7 @@ export const updateProduct = async (req, res) => {
       colorFamily,
       imageColors,
       existingImages,
+      productStatus,
     } = req.body;
 
     const currentProduct = await Product.findById(req.params.id);
@@ -174,10 +188,31 @@ export const updateProduct = async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (category !== undefined) updateData.category = category;
     if (price !== undefined) updateData.price = parseFloat(price);
-    if (stock !== undefined) updateData.stock = parseInt(stock);
     if (sku !== undefined) updateData.sku = sku;
     if (featured !== undefined)
       updateData.featured = featured === "true" || featured === true;
+
+    // Handle stock and status - MOVE THIS BEFORE IMAGE HANDLING
+    let finalStock =
+      stock !== undefined ? parseInt(stock) : currentProduct.stock;
+    let finalStatus =
+      productStatus !== undefined ? productStatus : currentProduct.status;
+    let stockStatus = currentProduct.stockStatus;
+
+    if (finalStatus === "limited") {
+      stockStatus = "limited_stock";
+    } else if (finalStock === 0) {
+      stockStatus = "out_of_stock";
+      if (finalStatus !== "archived") {
+        finalStatus = "soldout";
+      }
+    } else if (finalStock > 0) {
+      stockStatus = "in_stock";
+    }
+
+    if (stock !== undefined) updateData.stock = finalStock;
+    if (productStatus !== undefined) updateData.status = finalStatus;
+    updateData.stockStatus = stockStatus;
 
     // Handle sale price
     const currentPrice = updateData.price || currentProduct.price;
@@ -237,7 +272,7 @@ export const updateProduct = async (req, res) => {
       updateData.shippingOutsideDhaka = parseFloat(shippingOutsideDhaka);
     if (colorFamily !== undefined) updateData.colorFamily = colorFamily;
 
-    // Handle images — parse existingImages first, then merge any new uploads
+    // Handle images
     let parsedExistingImages = [];
     if (existingImages) {
       try {
@@ -381,7 +416,6 @@ export const getSearchSuggestions = async (req, res) => {
       return res.status(200).json({ status: "success", data: [] });
     }
 
-    // Search for products by name, category, or tags
     const suggestions = await Product.find({
       $or: [
         { name: { $regex: q, $options: "i" } },
@@ -410,10 +444,8 @@ export const searchProducts = async (req, res) => {
     let query = { status: "active" };
 
     if (searchType === "sku") {
-      // Exact SKU search
       query.sku = q.trim();
     } else {
-      // Search by name, category, slug, or tags
       query.$or = [
         { name: { $regex: q, $options: "i" } },
         { category: { $regex: q, $options: "i" } },

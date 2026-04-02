@@ -66,8 +66,13 @@ const productSchema = new mongoose.Schema({
   ],
   status: {
     type: String,
-    enum: ["active", "soldout", "archived"],
+    enum: ["active", "soldout", "archived", "limited"],
     default: "active",
+  },
+  stockStatus: {
+    type: String,
+    enum: ["in_stock", "limited_stock", "out_of_stock"],
+    default: "in_stock",
   },
   attributes: {
     type: Map,
@@ -195,8 +200,14 @@ productSchema.pre("save", async function (next) {
   }
 
   // Auto-update status based on stock
-  if (this.stock === 0 && this.status !== "archived") {
+  if (this.status === "limited") {
+    // For limited stock items, always show as limited stock regardless of actual stock number
+    this.stockStatus = "limited_stock";
+  } else if (this.stock === 0 && this.status !== "archived") {
     this.status = "soldout";
+    this.stockStatus = "out_of_stock";
+  } else if (this.stock > 0) {
+    this.stockStatus = "in_stock";
   }
 
   next();
