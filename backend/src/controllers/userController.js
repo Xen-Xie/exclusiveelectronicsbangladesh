@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Product from "../models/Product.js";
 
+// Statuses that mean the product is still available to customers
+const AVAILABLE_STATUSES = ["active", "limited"];
+
 // Create User
 export const createUser = async (req, res) => {
   try {
@@ -14,8 +17,8 @@ export const createUser = async (req, res) => {
       address,
       googleId,
       agreeToTerms,
-      firebaseUid, // Add this
-      emailVerified, // Add this
+      firebaseUid,
+      emailVerified,
     } = req.body;
 
     // Check required fields
@@ -51,7 +54,7 @@ export const createUser = async (req, res) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
-      agreeToTerms: agreeToTerms || false, // Ensure this is saved
+      agreeToTerms: agreeToTerms || false,
       phoneNumber: phoneNumber || "",
       address: address || "",
       role: "user",
@@ -150,6 +153,7 @@ export const loginUser = async (req, res) => {
         message: "Incorrect email or password",
       });
     }
+
     if (!user.emailVerified) {
       return res.status(403).json({
         status: "fail",
@@ -157,7 +161,7 @@ export const loginUser = async (req, res) => {
           "Please verify your email address before logging in. Check your inbox for the verification link.",
       });
     }
-    // Update last login
+
     user.lastLogin = Date.now();
     await user.save({ validateBeforeSave: false });
 
@@ -230,14 +234,16 @@ export const getUserById = async (req, res) => {
     // Filter out inactive products from wishlist if wishlist exists
     let activeWishlist = [];
     if (user.wishlist && user.wishlist.length > 0) {
-      // You need to populate product details first
       await user.populate({
         path: "wishlist.product",
-        select: "name price salePrice onSale images slug ratingSummary status",
+        select:
+          "name price salePrice onSale images slug ratingSummary status stockStatus",
       });
 
+      // Keep active AND limited stock products — only strip soldout/archived
       activeWishlist = user.wishlist.filter(
-        (item) => item.product && item.product.status === "active",
+        (item) =>
+          item.product && AVAILABLE_STATUSES.includes(item.product.status),
       );
     }
 
@@ -258,29 +264,16 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Update user info (only phoneNumber and address)
+// Update user info
 export const updateUser = async (req, res) => {
   try {
     const userId = req.user.id;
-    const {
-      phoneNumber,
-      address,
-      postalCode,
-      division,
-      district,
-      upazila,
-    } = req.body;
+    const { phoneNumber, address, postalCode, division, district, upazila } =
+      req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        phoneNumber,
-        address,
-        postalCode,
-        division,
-        district,
-        upazila,
-      },
+      { phoneNumber, address, postalCode, division, district, upazila },
       { new: true, runValidators: true },
     ).select("-password");
 
@@ -297,6 +290,7 @@ export const updateUser = async (req, res) => {
     res.status(500).json({ status: "fail", message: error.message });
   }
 };
+
 // Delete user
 export const deleteUser = async (req, res) => {
   try {
@@ -345,8 +339,8 @@ export const addToWishlist = async (req, res) => {
       });
     }
 
-    // Check if product is active
-    if (product.status !== "active") {
+    // Allow active AND limited stock — reject only soldout/archived
+    if (!AVAILABLE_STATUSES.includes(product.status)) {
       return res.status(400).json({
         status: "fail",
         message: "Product is not available",
@@ -373,12 +367,7 @@ export const addToWishlist = async (req, res) => {
       });
     }
 
-    // Add to wishlist
-    user.wishlist.push({
-      product: productId,
-      addedAt: new Date(),
-    });
-
+    user.wishlist.push({ product: productId, addedAt: new Date() });
     await user.save();
 
     // Populate product details for response
@@ -394,10 +383,7 @@ export const addToWishlist = async (req, res) => {
     });
   } catch (error) {
     console.error("Add to wishlist error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
@@ -421,8 +407,6 @@ export const removeFromWishlist = async (req, res) => {
     );
 
     await user.save();
-
-    // Populate product details for response
     await user.populate("wishlist.product");
 
     res.status(200).json({
@@ -435,10 +419,7 @@ export const removeFromWishlist = async (req, res) => {
     });
   } catch (error) {
     console.error("Remove from wishlist error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
@@ -450,7 +431,7 @@ export const getWishlist = async (req, res) => {
     const user = await User.findById(userId).populate({
       path: "wishlist.product",
       select:
-        "name price salePrice onSale images slug ratingSummary status stock",
+        "name price salePrice onSale images slug ratingSummary status stockStatus stock",
     });
 
     if (!user) {
@@ -460,9 +441,10 @@ export const getWishlist = async (req, res) => {
       });
     }
 
-    // Filter out products that are no longer active or out of stock
+    // Keep active and limited — strip soldout/archived
     const activeWishlist = user.wishlist.filter(
-      (item) => item.product && item.product.status === "active",
+      (item) =>
+        item.product && AVAILABLE_STATUSES.includes(item.product.status),
     );
 
     res.status(200).json({
@@ -475,10 +457,7 @@ export const getWishlist = async (req, res) => {
     });
   } catch (error) {
     console.error("Get wishlist error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
@@ -500,18 +479,10 @@ export const checkWishlist = async (req, res) => {
       (item) => item.product.toString() === productId,
     );
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        isInWishlist,
-      },
-    });
+    res.status(200).json({ status: "success", data: { isInWishlist } });
   } catch (error) {
     console.error("Check wishlist error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
@@ -532,23 +503,17 @@ export const clearWishlist = async (req, res) => {
     await user.save();
 
     res.status(200).json({
-      status: "scityuccess",
+      status: "success",
       message: "Wishlist cleared successfully",
-      data: {
-        wishlist: [],
-        wishlistCount: 0,
-      },
+      data: { wishlist: [], wishlistCount: 0 },
     });
   } catch (error) {
     console.error("Clear wishlist error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
-// Add email verification endpoint
+// Verify email
 export const verifyEmail = async (req, res) => {
   try {
     const { email, firebaseUid } = req.body;
@@ -565,10 +530,9 @@ export const verifyEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        status: "fail",
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ status: "fail", message: "User not found" });
     }
 
     if (user.emailVerified) {
@@ -588,14 +552,11 @@ export const verifyEmail = async (req, res) => {
     });
   } catch (error) {
     console.error("Email verification error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
-// Resend verification email (optional)
+// Resend verification email
 export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
@@ -603,10 +564,9 @@ export const resendVerification = async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      return res.status(404).json({
-        status: "fail",
-        message: "User not found",
-      });
+      return res
+        .status(404)
+        .json({ status: "fail", message: "User not found" });
     }
 
     if (user.emailVerified) {
@@ -616,18 +576,12 @@ export const resendVerification = async (req, res) => {
       });
     }
 
-    // Here you would trigger Firebase to resend verification email
-    // Since you're using Firebase, you'll need to handle this on the frontend
-
     res.status(200).json({
       status: "success",
       message: "Verification email resent. Please check your inbox.",
     });
   } catch (error) {
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
@@ -637,10 +591,9 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({
-        status: "fail",
-        message: "Email is required",
-      });
+      return res
+        .status(400)
+        .json({ status: "fail", message: "Email is required" });
     }
 
     // Check if user exists in MongoDB
@@ -676,9 +629,6 @@ export const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Forgot password error:", error);
-    res.status(500).json({
-      status: "fail",
-      message: error.message,
-    });
+    res.status(500).json({ status: "fail", message: error.message });
   }
 };
